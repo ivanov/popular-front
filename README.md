@@ -11,6 +11,7 @@
     http://localhost:8888/api/sessions
 - [ ] make websocket port part of model
 - [ ] make a drop down for mime-types in display/execute_reply messages
+- [ ] - (minor)  - leading 0 formatting  for single digit time values
 
     - [I 21:27:55.821 NotebookApp] Adapting to protocol v5.1 for kernel 57cd23b2-e6b1-4458-93ed-2c513b0442ca [W 21:28:19.603 NotebookApp] No channel specified, assuming shell:
       {'header': 'sup'}}]]

@@ -26,12 +26,13 @@ type alias Model =
   , messages : List String
   , sessions : RemoteData Http.Error (List Sessions)
   , index : Maybe Int
+  , connectionString : String
   }
 
 
 init : (Model, Cmd Msg)
 init =
-  (Model "" ["hey", "how", "are", " you"] NotAsked Nothing, Cmd.none)
+  (Model "" ["hey", "how", "are", " you"] NotAsked Nothing "349fa50a-fd05-4ae6-adf5-cf482f63bfa4" , Cmd.none)
 
 
 -- UPDATE
@@ -48,7 +49,7 @@ type Msg
 newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
 
 
-ws_url : String
+ws_url : Model -> String
 --ws_url = "ws://localhost:8888/api/kernels/d341ae22-0258-482b-831a-fa0a0370ffba"
 --ws_url = "http://localhost:8888/api/kernels/d341ae22-0258-482b-831a-fa0a0370ffba/channels?session_id=6CCE28259904425785B76A7D45D9EB26"
 --ws_url = "ws://localhost:8080/echo"
@@ -56,7 +57,8 @@ ws_url : String
 --ws_url = "ws://localhost:8888/api/kernels/57cd23b2-e6b1-4458-93ed-2c513b0442ca"
 -- ws_url = "ws://localhost:8888/api/kernels/57cd23b2-e6b1-4458-93ed-2c513b0442ca/channels?session_id=6A5BB323BD6F41A3B95860E4441716C1"
 --ws_url = "ws://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels?session_id=132CABB1A5B749FCACC7E3FAC30E42FC"
-ws_url = "ws://localhost:8888/api/kernels/349fa50a-fd05-4ae6-adf5-cf482f63bfa4/channels?"
+-- 349fa50a-fd05-4ae6-adf5-cf482f63bfa4
+ws_url model = "ws://localhost:8888/api/kernels/" ++ model.connectionString ++ " /channels?"
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -71,7 +73,7 @@ update msg model =
     Send ->
       { model
       | input = ""
-      } ! [ WebSocket.send ws_url model.input ]
+      } ! [ WebSocket.send (ws_url model) model.input ]
 
     NewMessage str ->
     { model
@@ -107,7 +109,7 @@ formatTime t
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  WebSocket.listen ws_url NewMessage
+  WebSocket.listen (ws_url model) NewMessage
 
 
 -- VIEW
