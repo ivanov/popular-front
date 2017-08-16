@@ -4,11 +4,13 @@
 - [ ] enable cross-origin websockets
     [W 20:30:49.695 NotebookApp] Blocking Cross Origin API request for /api/kernels/08f00356-1bbc-45ef-99ca-8163462a5ee7.  Origin: http://localhost:8000, Host: localhost:8888
     [W 20:30:49.697 NotebookApp] 404 GET /api/kernels/08f00356-1bbc-45ef-99ca-8163462a5ee7 (::1) 2.02ms referer=None)]]
+  --NotebookApp.allow_origin="http://localhost:8000"
     - [ ] idea: make a websocket backchannel...
 
 - [ ] let's get the sessions object (across origins) and go from there...
     http://localhost:8888/api/sessions
-
+- [ ] make websocket port part of model
+- [ ] make a drop down for mime-types in display/execute_reply messages
 
     - [I 21:27:55.821 NotebookApp] Adapting to protocol v5.1 for kernel 57cd23b2-e6b1-4458-93ed-2c513b0442ca [W 21:28:19.603 NotebookApp] No channel specified, assuming shell:
       {'header': 'sup'}}]]
@@ -33,3 +35,21 @@ https://eeue56.github.io/json-to-elm/
 
 
 why do we have the same thing in msg_type in the header and in the raw thing...
+
+
+message in console when we can't connect...
+
+          GET 
+http://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels [HTTP/1.1 403 Forbidden 6ms]
+Firefox can’t establish a connection to the server at ws://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels.  
+
+that's because we didn't start with allow origin
+
+
+[W 12:16:22.889 NotebookApp] No session ID specified
+[I 12:16:22.890 NotebookApp] Adapting to protocol v5.1 for kernel 31004fe1-31cb-4529-9ff2-214c4abfc5fa
+[W 12:16:22.890 NotebookApp] Blocking Cross Origin WebSocket Attempt.  Origin: http://localhost:8000, Host: localhost:8888
+[W 12:16:22.891 NotebookApp] 403 GET /api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels (::1) 4.60ms referer=None
+
+
+wss (secure websockets
