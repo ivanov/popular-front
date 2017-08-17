@@ -137,7 +137,9 @@ update msg model =
     } ! [ Cmd.none ]
     Focus i ->
     { model
-    | focused = Just i
+    | focused = case Just i == model.focused  of
+        True -> Nothing
+        False -> Just i
     } ! [ Cmd.none ]
 
 -- Timezone offset (relative to UTC)
@@ -173,7 +175,9 @@ view model =
     ]
     [ viewStatus model
     , div[] [toggleRenderedStatus model, kernelInfoButton, pingButton]
-    , div [] <| viewValidMessages model, viewFocused model
+    , div [style ["display" => "flex", "flex-direction" => "row"]]
+          [ div [] (viewValidMessages model)
+          , viewFocused model]
     , input [onInput Input] []
     , button [onClick Send] [text "Send"]
     , button [onClick <| newMessage  "--- mark --- "] [text "add marker"]
@@ -197,9 +201,13 @@ viewStatus model =
 
 
 
-viewMessage : Int -> Jmsg -> Html Msg
-viewMessage i msg =
-  div [onClick (Focus i)] [ text <| msg.msg_type ++ ": " ++ msg.content.execution_state ]
+viewMessage : Model -> Int -> Jmsg -> Html Msg
+viewMessage model i msg =
+  let st =  case model.focused of
+    Just j -> if i == j then ["background-color" => "orange"] else []
+    Nothing -> []
+  in
+  div [style st, onClick (Focus i)] [ text <| msg.msg_type ++ ": " ++ msg.content.execution_state ]
 
 viewRawMessage : Int -> String -> Html Msg
 viewRawMessage i msg =
@@ -221,7 +229,7 @@ viewValidMessages model =
           Nothing -> model.msgs
           Just i -> List.take i model.msgs
         in
-          List.indexedMap viewMessage msgs
+          List.indexedMap (viewMessage model) msgs
 
 
 
@@ -262,12 +270,11 @@ viewFocused model =
   case model.focused of
     Just i ->
     let
-      msg = if i > 0 then List.head <| List.drop (i-1) model.msgs else List.head model.msgs
-
+      msg = List.head <| List.drop i model.msgs
     in
     case msg of
       Nothing -> div [] []
       Just msg ->
         -- TODO: put flexbox styling here
-        div [] [text <| msg.msg_type ++ ": " ++ msg.content.execution_state ]
+        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++ msg.content.execution_state ]
     Nothing -> div [] []
