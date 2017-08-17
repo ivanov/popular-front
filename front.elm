@@ -17,14 +17,14 @@ main =
     , subscriptions = subscriptions
     }
 
-type alias Sessions = String
+type alias Session = String
 
 -- MODEL
 
 type alias Model =
   { input : String
   , messages : List String
-  , sessions : RemoteData Http.Error (List Sessions)
+  , session : RemoteData Http.Error Session
   , index : Maybe Int
   , connectionString : String
   }
@@ -32,7 +32,7 @@ type alias Model =
 
 init : (Model, Cmd Msg)
 init =
-  (Model "" ["hey", "how", "are", " you"] NotAsked Nothing "349fa50a-fd05-4ae6-adf5-cf482f63bfa4" , Cmd.none)
+  (Model "" ["hey", "how", "are", " you"] NotAsked Nothing "349fa50a-fd05-4ae6-adf5-cf482f63bfa4" , Task.perform identity (Task.succeed Connect))
 
 
 -- UPDATE
@@ -40,6 +40,7 @@ init =
 type Msg
   = Input String
   | Send
+  | Connect
   | NewMessage String
   | NewTimeMessage Time String
   | UpdateIndex String
@@ -58,8 +59,9 @@ ws_url : Model -> String
 -- ws_url = "ws://localhost:8888/api/kernels/57cd23b2-e6b1-4458-93ed-2c513b0442ca/channels?session_id=6A5BB323BD6F41A3B95860E4441716C1"
 --ws_url = "ws://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels?session_id=132CABB1A5B749FCACC7E3FAC30E42FC"
 -- 349fa50a-fd05-4ae6-adf5-cf482f63bfa4
-ws_url model = "ws://localhost:8888/api/kernels/" ++ model.connectionString ++ " /channels?"
+ws_url model = "ws://localhost:8888/api/kernels/" ++ model.connectionString ++ "/channels"
 
+kernel_info_request_msg = """{"header":{"msg_type":  "kernel_info_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
 
 update : Msg -> Model -> (Model, Cmd Msg)
 --update msg {input, messages, sessions} =
@@ -70,15 +72,23 @@ update msg model =
       | input = newInput
       } ! [ Cmd.none ]
 
+    Connect ->
+      { model
+      | input = ""
+      , session = Loading
+      } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
+
     Send ->
       { model
       | input = ""
+      , session = Loading
       } ! [ WebSocket.send (ws_url model) model.input ]
 
     NewMessage str ->
     { model
     --| messages = str :: model.messages
     | messages = model.messages ++ [str]
+    , session = Success "OK"
     } ! [ Cmd.none ]
 
     GetTimeAndThen successHandler ->
@@ -113,6 +123,7 @@ subscriptions model =
 
 
 -- VIEW
+(=>) = (,)
 
 view : Model -> Html Msg
 view model =
@@ -124,7 +135,8 @@ view model =
       , "min-height" =>  "100vh"
       ]
     ]
-    [ div [] <| viewValidMessages model
+    [ viewStatus model
+    , div [] <| viewValidMessages model
     , input [onInput Input] []
     , button [onClick Send] [text "Send"]
     , button [onClick <| newMessage  "--- mark --- "] [text "add marker"]
@@ -134,6 +146,18 @@ view model =
     , viewTimeSlider model
     , viewTimeSlider model
     ]
+
+viewStatus : Model -> Html Msg
+viewStatus model =
+  let
+    (color, message) = case model.session of
+        NotAsked -> ("red", "Not connected")
+        Loading -> ("yellow", "Not connected")
+        Success _ -> ("green", "Connected")
+        Failure x -> ("red", "Failed to connect")
+  in
+    div [style ["background-color" => color]] [text message]
+
 
 
 viewMessage : String -> Html msg
@@ -148,7 +172,6 @@ viewValidMessages model =
   in
     List.map viewMessage msgs
 
-(=>) = (,)
 
 
 viewTimeSlider : Model -> Html Msg
