@@ -207,7 +207,7 @@ viewMessage model i msg =
     Just j -> if i == j then ["background-color" => "orange"] else []
     Nothing -> []
   in
-  div [style st, onClick (Focus i)] [ text <| msg.msg_type ++ ": " ++ msg.content.execution_state ]
+  div [style st, onClick (Focus i)] [ text <| "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ ": " ++ msg.content.execution_state ]
 
 viewRawMessage : Int -> String -> Html Msg
 viewRawMessage i msg =
@@ -276,5 +276,5 @@ viewFocused model =
       Nothing -> div [] []
       Just msg ->
         -- TODO: put flexbox styling here
-        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++ msg.content.execution_state ]
+        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++ msg.content.execution_state, text <| toString msg ]
     Nothing -> div [] []

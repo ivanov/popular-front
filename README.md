@@ -65,6 +65,7 @@ wss (secure websockets
 let's send a kernel_info_request on initial load...
 
 [x] toggle raw and rendered message mode....
+[ ] hook up arrow keys for changing message in focus
 
 [ ] make simpler messages by type... (StatusMessage ....)
   - would make it easier to case switch on message types in rednering
