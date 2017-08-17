@@ -6,8 +6,10 @@ import WebSocket
 import Http
 import Task
 import Time exposing (Time, now)
+import Json.Decode  exposing (decodeString)
 
 -- import JupyterMessages exposing (..)
+import JMessages exposing (..)
 
 main =
   Html.program
@@ -18,21 +20,27 @@ main =
     }
 
 type alias Session = String
+type RawOrRendered = Raw | Rendered
 
 -- MODEL
 
 type alias Model =
   { input : String
   , messages : List String
+  , msgs : List Jmsg
   , session : RemoteData Http.Error Session
   , index : Maybe Int
   , connectionString : String
+  , raw : RawOrRendered
+  , focused : Maybe Int
   }
 
 
 init : (Model, Cmd Msg)
 init =
-  (Model "" ["hey", "how", "are", " you"] NotAsked Nothing "349fa50a-fd05-4ae6-adf5-cf482f63bfa4" , Task.perform identity (Task.succeed Connect))
+  (Model "" [] [] NotAsked Nothing "a09b920b-652f-4bae-8958-c3d182b9a5af" Rendered Nothing, Cmd.none )
+  --Task.perform identity (Task.succeed Connect))
+
 
 
 -- UPDATE
@@ -41,10 +49,13 @@ type Msg
   = Input String
   | Send
   | Connect
+  | Ping
   | NewMessage String
   | NewTimeMessage Time String
   | UpdateIndex String
   | GetTimeAndThen (Time -> Msg)
+  | ToggleRendered
+  | Focus Int
 
 
 newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
@@ -62,6 +73,7 @@ ws_url : Model -> String
 ws_url model = "ws://localhost:8888/api/kernels/" ++ model.connectionString ++ "/channels"
 
 kernel_info_request_msg = """{"header":{"msg_type":  "kernel_info_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
+empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
 
 update : Msg -> Model -> (Model, Cmd Msg)
 --update msg {input, messages, sessions} =
@@ -78,6 +90,12 @@ update msg model =
       , session = Loading
       } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
 
+    Ping ->
+      { model
+      | input = ""
+      , session = Loading
+      } ! [ WebSocket.send (ws_url model) empty_execute_request_msg ]
+
     Send ->
       { model
       | input = ""
@@ -85,11 +103,19 @@ update msg model =
       } ! [ WebSocket.send (ws_url model) model.input ]
 
     NewMessage str ->
-    { model
-    --| messages = str :: model.messages
-    | messages = model.messages ++ [str]
-    , session = Success "OK"
-    } ! [ Cmd.none ]
+    let
+      latest = case decodeString decodeJmsg str of
+        Ok jmsg -> [(Debug.log "IT WORKS" jmsg)]
+        Err msg -> let error = (Debug.log "Nope" msg)
+                  in []
+    in
+      { model
+      --| messages = str :: model.messages
+      | messages = model.messages ++ [str]
+      , msgs = model.msgs ++ latest
+      , session = Success "OK"
+      --, last_status = status
+      } ! [ Cmd.none ]
 
     GetTimeAndThen successHandler ->
     ( model, (Task.perform successHandler now) )
@@ -102,6 +128,16 @@ update msg model =
     UpdateIndex str ->
     { model
     | index = Just <| Result.withDefault 0 <| String.toInt str
+    } ! [ Cmd.none ]
+    ToggleRendered ->
+    { model
+    | raw  = case model.raw of
+        Raw -> Rendered
+        Rendered -> Raw
+    } ! [ Cmd.none ]
+    Focus i ->
+    { model
+    | focused = Just i
     } ! [ Cmd.none ]
 
 -- Timezone offset (relative to UTC)
@@ -136,7 +172,8 @@ view model =
       ]
     ]
     [ viewStatus model
-    , div [] <| viewValidMessages model
+    , div[] [toggleRenderedStatus model, kernelInfoButton, pingButton]
+    , div [] <| viewValidMessages model, viewFocused model
     , input [onInput Input] []
     , button [onClick Send] [text "Send"]
     , button [onClick <| newMessage  "--- mark --- "] [text "add marker"]
@@ -160,24 +197,40 @@ viewStatus model =
 
 
 
-viewMessage : String -> Html msg
-viewMessage msg =
-  div [] [ text msg ]
+viewMessage : Int -> Jmsg -> Html Msg
+viewMessage i msg =
+  div [onClick (Focus i)] [ text <| msg.msg_type ++ ": " ++ msg.content.execution_state ]
 
-viewValidMessages : Model -> List (Html msg)
+viewRawMessage : Int -> String -> Html Msg
+viewRawMessage i msg =
+  div [onClick (Focus i)] [ text msg , hr [] [] ]
+
+
+viewValidMessages : Model -> List (Html Msg)
 viewValidMessages model =
-  let msgs = case model.index of
-    Nothing -> model.messages
-    Just i -> List.take i model.messages
-  in
-    List.map viewMessage msgs
+   case model.raw of
+      Raw ->
+        let msgs = case model.index of
+          Nothing -> model.messages
+          Just i -> List.take i model.messages
+        in
+          List.indexedMap viewRawMessage msgs
+
+      Rendered ->
+        let msgs =  case model.index of
+          Nothing -> model.msgs
+          Just i -> List.take i model.msgs
+        in
+          List.indexedMap viewMessage msgs
 
 
 
 viewTimeSlider : Model -> Html Msg
 viewTimeSlider model =
   let
-    len = List.length model.messages
+    len = case model.raw of
+      Raw -> List.length model.messages
+      Rendered -> List.length model.msgs
   in
   footer []
   [ input
@@ -189,3 +242,32 @@ viewTimeSlider model =
       , style ["width" => "96%"]
       ] [text "hallo"]
   ]
+
+toggleRenderedStatus : Model -> Html Msg
+toggleRenderedStatus model =
+  let nextToggleValue = case model.raw of
+    Raw -> "Rendered"
+    Rendered -> "Raw"
+  in
+    button [onClick ToggleRendered] [text nextToggleValue]
+
+kernelInfoButton : Html Msg
+kernelInfoButton =
+    button [onClick Connect] [text "kernel info"]
+
+pingButton =
+    button [onClick Ping] [text "Ping"]
+
+viewFocused model =
+  case model.focused of
+    Just i ->
+    let
+      msg = if i > 0 then List.head <| List.drop (i-1) model.msgs else List.head model.msgs
+
+    in
+    case msg of
+      Nothing -> div [] []
+      Just msg ->
+        -- TODO: put flexbox styling here
+        div [] [text <| msg.msg_type ++ ": " ++ msg.content.execution_state ]
+    Nothing -> div [] []

@@ -4,7 +4,7 @@
 - [ ] enable cross-origin websockets
     [W 20:30:49.695 NotebookApp] Blocking Cross Origin API request for /api/kernels/08f00356-1bbc-45ef-99ca-8163462a5ee7.  Origin: http://localhost:8000, Host: localhost:8888
     [W 20:30:49.697 NotebookApp] 404 GET /api/kernels/08f00356-1bbc-45ef-99ca-8163462a5ee7 (::1) 2.02ms referer=None)]]
-  --NotebookApp.allow_origin="http://localhost:8000"
+  nb --NotebookApp.allow_origin="http://localhost:8000" # start notebook server this way
     - [ ] idea: make a websocket backchannel...
 
 - [ ] let's get the sessions object (across origins) and go from there...
@@ -13,7 +13,11 @@
 - [ ] make a drop down for mime-types in display/execute_reply messages
 - [ ] - (minor)  - leading 0 formatting  for single digit time values
 
-- [ ] status - connected or not...
+- [x] status - connected or not...
+- [ ] filter out status messages to their own queue (gets busy otherwise...)
+  "view raw"
+
+
 
     - [I 21:27:55.821 NotebookApp] Adapting to protocol v5.1 for kernel 57cd23b2-e6b1-4458-93ed-2c513b0442ca [W 21:28:19.603 NotebookApp] No channel specified, assuming shell:
       {'header': 'sup'}}]]
@@ -59,3 +63,13 @@ wss (secure websockets
 
 
 let's send a kernel_info_request on initial load...
+
+[x] toggle raw and rendered message mode....
+
+[ ] make simpler messages by type... (StatusMessage ....)
+  - would make it easier to case switch on message types in rednering
+[ ] link messages (threaded view)
+
+
+
+
