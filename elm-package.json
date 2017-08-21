@@ -1,7 +1,7 @@
 {
-    "version": "1.0.0",
-    "summary": "helpful summary of your project, less than 80 characters",
-    "repository": "https://github.com/user/project.git",
+    "version": "0.1.0",
+    "summary": "Prototyping UI and UX ideas for Jupyter notebooks",
+    "repository": "https://github.com/ivanov/popular-front.git",
     "license": "BSD3",
     "source-directories": [
         "."

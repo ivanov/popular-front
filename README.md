@@ -1,5 +1,7 @@
 # Jovyan Popular Front
 
+Prototyping UI and UX ideas for Jupyter notebooks (in Elm).
+
 ## Installation (user)
 
 (TODO: this isn't a supported  option at the moment)
@@ -22,18 +24,21 @@ elm-package install
 
 
 ## Usage
-Start up a elm-reactor, which will compile and serve the popular front, and
+Start up a `elm-reactor`, which will compile and serve the popular front, and
 recompile it if you make any changes to the elm code.
 
 ```
 elm-reactor
 ```
 
-Navigate to `[http://localhost:8000/front.elm](http://localhost:8000/front.elm)`
-- where you should see the UI with a red bar at the top that says "Not connected".
-Start a jupyter notebook server:
+Navigate to [http://localhost:8000/front.elm](http://localhost:8000/front.elm) -
+where you should see the UI with a red bar at the top that says "Not connected".
+
+Now start a jupyter notebook server, making sure to pass the `allow_origin`
+parameter which specifies the URL the elm-reactor is serving to, like so:
+
 ```
-jupyter notebook --NotebookApp.allow_origin="http://localhost:8000"` or wherever the jovyan
+jupyter notebook --NotebookApp.allow_origin="http://localhost:8000"`
 ```
 
 
