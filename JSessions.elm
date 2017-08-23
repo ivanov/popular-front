@@ -1,6 +1,7 @@
 module JSessions exposing
   ( Session
   , decodeSession
+  , decodeSessions
   , encodeSession
   , sampleSessions
   )
@@ -76,3 +77,5 @@ sampleSessions_string = """[{"kernel": {"id": "6c926cc6-05d5-4e47-b1b8-cf51819c7
 sampleSessions = case decodeString (list decodeSession) sampleSessions_string of
   Ok x -> x
   Err y -> []
+
+decodeSessions =  list decodeSession

@@ -38,7 +38,7 @@ Now start a jupyter notebook server, making sure to pass the `allow_origin`
 parameter which specifies the URL the elm-reactor is serving to, like so:
 
 ```
-jupyter notebook --NotebookApp.allow_origin="http://localhost:8000"`
+jupyter notebook --NotebookApp.allow_origin="http://localhost:8000"` --NotebookApp.token='' --NotebookApp.password=''
 ```
 
 
@@ -100,6 +100,7 @@ popular front is being served from).
     - would make it easier to case switch on message types in rendering
 - [ ] link messages (threaded view)
 - [ ] remove message from the front, too (via one of the sliders)
+- [ ] - add notebook path to list, instead of kernel string
 
 
 

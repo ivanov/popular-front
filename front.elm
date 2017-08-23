@@ -27,7 +27,6 @@ type alias Model =
   { input : String
   , messages : List String
   , msgs : List Jmsg
-  , session : RemoteData Http.Error Session
   , index : Maybe Int
   , connectionString : String
   , raw : RawOrRendered
@@ -43,18 +42,17 @@ init = (
   { input = ""
   , messages = []
   , msgs = []
-  , session = NotAsked
   , index = Nothing
   , connectionString = ""
   , raw = Rendered
   , focused = Nothing
   , server = "localhost:8888"
-  -- , sessions = NotAsked
-  , sessions = Success sampleSessions
+  , sessions = NotAsked
+  --, sessions = Success sampleSessions
   , activeSession = Nothing
   }
-  , Cmd.none)
-  --Task.perform identity (Task.succeed Connect))
+  --, Cmd.none)
+  , Task.perform identity (Task.succeed ConnectAPI))
 
 
 
@@ -63,7 +61,8 @@ init = (
 type Msg
   = Input String
   | Send
-  | Connect
+  | ConnectKernel
+  | ConnectAPI
   | Ping
   | NewMessage String
   | NewTimeMessage Time String
@@ -72,6 +71,8 @@ type Msg
   | ToggleRendered
   | Focus Int
   | ChangeServer String
+  | NewSessions (Result Http.Error (List Session))
+  | SetActiveSession Session
 
 
 newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
@@ -79,15 +80,13 @@ newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
 
 ws_url : Model -> String
 --ws_url = "ws://localhost:8888/api/kernels/d341ae22-0258-482b-831a-fa0a0370ffba"
---ws_url = "http://localhost:8888/api/kernels/d341ae22-0258-482b-831a-fa0a0370ffba/channels?session_id=6CCE28259904425785B76A7D45D9EB26"
---ws_url = "ws://localhost:8080/echo"
---ws_url = "ws://localhost:8888/api/kernels/08f00356-1bbc-45ef-99ca-8163462a5ee7"
---ws_url = "ws://localhost:8888/api/kernels/57cd23b2-e6b1-4458-93ed-2c513b0442ca"
--- ws_url = "ws://localhost:8888/api/kernels/57cd23b2-e6b1-4458-93ed-2c513b0442ca/channels?session_id=6A5BB323BD6F41A3B95860E4441716C1"
---ws_url = "ws://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels?session_id=132CABB1A5B749FCACC7E3FAC30E42FC"
--- 349fa50a-fd05-4ae6-adf5-cf482f63bfa4
 ws_url model
-  = "ws://" ++ model.server ++ "/api/kernels/" ++ model.connectionString ++ "/channels"
+  =
+  case model.activeSession of
+  Nothing ->  Debug.log "~~~ uhoh" "http://shouldnothappen"
+  Just s ->
+    Debug.log "sending ws to..."
+     "ws://" ++ model.server ++ "/api/kernels/" ++ s.kernel.id ++ "/channels"
 
 kernel_info_request_msg = """{"header":{"msg_type":  "kernel_info_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
 empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
@@ -100,10 +99,9 @@ update msg model =
       | input = newInput
       } ! [ Cmd.none ]
 
-    Connect ->
+    ConnectKernel ->
       { model
       | input = ""
-      , sessions = Loading
       } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
 
     Ping ->
@@ -129,7 +127,6 @@ update msg model =
       --| messages = str :: model.messages
       | messages = model.messages ++ [str]
       , msgs = model.msgs ++ latest
-      , sessions = Success  []
       --, last_status = status
       } ! [ Cmd.none ]
 
@@ -159,7 +156,32 @@ update msg model =
     } ! [ Cmd.none ]
 
     ChangeServer s ->
-    { model | server = s}  ! [Cmd.none]
+    let
+      new_model =
+      { model
+      | server = s
+      , sessions = Loading
+      }
+    in
+      new_model  ! [getSession new_model]
+
+    ConnectAPI ->
+      update (ChangeServer model.server) model
+
+
+    NewSessions result ->
+    let
+      new_sessions = case result of
+        Ok sessions -> Debug.log "hallo" Success sessions
+        Err x ->  Debug.log "failure" Failure x
+    in
+      { model
+      | sessions = new_sessions
+      , activeSession = List.head <| Result.withDefault [] result
+      } ! [Cmd.none]
+
+    SetActiveSession s ->
+    {model | activeSession = Just s} ! [Cmd.none]
 
 -- Timezone offset (relative to UTC)
 tz = -7
@@ -172,11 +194,27 @@ formatTime t
       , floor (Time.inSeconds t)  % 60
       ]
 
+api_url : Model -> String
+api_url model =
+-- TODO: this is brittle - we should check if there's already a leading http://
+-- in the url and not add it to the front in that case
+-- TODO: support tokens and password
+  Debug.log "URL is: " "http://" ++ model.server ++ "/api/sessions"
+
+getSession : Model -> Cmd Msg
+getSession model =
+  let
+    request = Debug.log "calling url" Http.get (api_url model) decodeSessions
+  in
+    Http.send NewSessions request
+
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  WebSocket.listen (ws_url model) NewMessage
+  case model.activeSession of
+    Nothing -> Sub.none
+    _ -> WebSocket.listen (ws_url model) NewMessage
 
 
 -- VIEW
@@ -280,7 +318,7 @@ toggleRenderedStatus model =
 
 kernelInfoButton : Html Msg
 kernelInfoButton =
-    button [onClick Connect] [text "kernel info"]
+    button [onClick ConnectKernel] [text "kernel info"]
 
 pingButton =
     button [onClick Ping] [text "Ping"]
@@ -305,7 +343,7 @@ viewServer model = span []
   ]
 
 sessionToOption : Session -> Html Msg
-sessionToOption s = option [] [text s.id]
+sessionToOption s = option [onClick (SetActiveSession s)] [text s.id]
 
 sessionsToOptions : Model -> List (Html Msg)
 sessionsToOptions model =
