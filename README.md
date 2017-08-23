@@ -77,7 +77,13 @@ popular front is being served from).
 - [ ] let's get the sessions object (across origins) and go from there...
     http://localhost:8888/api/sessions
 - [x] make websocket port part of model
+- [x] make server url + port part of model
+- [x] specify server url + port in UI (assumes localhost)
+- [ ] fetch api/sessions on server url change (to see if connected)
+    - [ ] timeout the fetching of api/sessions / deal with errors
+- [ ] specify whole connection URL in UI (via dropdown)
 - [ ] make a drop down for mime-types in display/execute_reply messages
+- [ ] prettify message rendering
 - [ ] - (minor)  - leading 0 formatting  for single digit time values
 
 - [x] status - connected or not...

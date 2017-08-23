@@ -8,8 +8,8 @@ import Task
 import Time exposing (Time, now)
 import Json.Decode  exposing (decodeString)
 
--- import JupyterMessages exposing (..)
 import JMessages exposing (..)
+import JSessions exposing (..)
 
 main =
   Html.program
@@ -19,7 +19,6 @@ main =
     , subscriptions = subscriptions
     }
 
-type alias Session = String
 type RawOrRendered = Raw | Rendered
 
 -- MODEL
@@ -33,12 +32,28 @@ type alias Model =
   , connectionString : String
   , raw : RawOrRendered
   , focused : Maybe Int
+  , server : String
+  , sessions : RemoteData Http.Error (List Session)
+  , activeSession : Maybe Session
   }
 
 
 init : (Model, Cmd Msg)
-init =
-  (Model "" [] [] NotAsked Nothing "a09b920b-652f-4bae-8958-c3d182b9a5af" Rendered Nothing, Cmd.none )
+init = (
+  { input = ""
+  , messages = []
+  , msgs = []
+  , session = NotAsked
+  , index = Nothing
+  , connectionString = ""
+  , raw = Rendered
+  , focused = Nothing
+  , server = "localhost:8888"
+  -- , sessions = NotAsked
+  , sessions = Success sampleSessions
+  , activeSession = Nothing
+  }
+  , Cmd.none)
   --Task.perform identity (Task.succeed Connect))
 
 
@@ -56,6 +71,7 @@ type Msg
   | GetTimeAndThen (Time -> Msg)
   | ToggleRendered
   | Focus Int
+  | ChangeServer String
 
 
 newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
@@ -70,13 +86,13 @@ ws_url : Model -> String
 -- ws_url = "ws://localhost:8888/api/kernels/57cd23b2-e6b1-4458-93ed-2c513b0442ca/channels?session_id=6A5BB323BD6F41A3B95860E4441716C1"
 --ws_url = "ws://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels?session_id=132CABB1A5B749FCACC7E3FAC30E42FC"
 -- 349fa50a-fd05-4ae6-adf5-cf482f63bfa4
-ws_url model = "ws://localhost:8888/api/kernels/" ++ model.connectionString ++ "/channels"
+ws_url model
+  = "ws://" ++ model.server ++ "/api/kernels/" ++ model.connectionString ++ "/channels"
 
 kernel_info_request_msg = """{"header":{"msg_type":  "kernel_info_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
 empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
 
 update : Msg -> Model -> (Model, Cmd Msg)
---update msg {input, messages, sessions} =
 update msg model =
   case msg of
     Input newInput ->
@@ -87,19 +103,19 @@ update msg model =
     Connect ->
       { model
       | input = ""
-      , session = Loading
+      , sessions = Loading
       } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
 
     Ping ->
       { model
       | input = ""
-      , session = Loading
+      , sessions = Loading
       } ! [ WebSocket.send (ws_url model) empty_execute_request_msg ]
 
     Send ->
       { model
       | input = ""
-      , session = Loading
+      , sessions = Loading
       } ! [ WebSocket.send (ws_url model) model.input ]
 
     NewMessage str ->
@@ -113,7 +129,7 @@ update msg model =
       --| messages = str :: model.messages
       | messages = model.messages ++ [str]
       , msgs = model.msgs ++ latest
-      , session = Success "OK"
+      , sessions = Success  []
       --, last_status = status
       } ! [ Cmd.none ]
 
@@ -141,6 +157,9 @@ update msg model =
         True -> Nothing
         False -> Just i
     } ! [ Cmd.none ]
+
+    ChangeServer s ->
+    { model | server = s}  ! [Cmd.none]
 
 -- Timezone offset (relative to UTC)
 tz = -7
@@ -191,13 +210,13 @@ view model =
 viewStatus : Model -> Html Msg
 viewStatus model =
   let
-    (color, message) = case model.session of
+    (color, message) = case model.sessions of
         NotAsked -> ("red", "Not connected")
-        Loading -> ("yellow", "Not connected")
+        Loading -> ("yellow", "Loading...")
         Success _ -> ("green", "Connected")
         Failure x -> ("red", "Failed to connect")
   in
-    div [style ["background-color" => color]] [text message]
+    div [style ["background-color" => color]] [viewServer model, text message]
 
 
 
@@ -278,3 +297,21 @@ viewFocused model =
         -- TODO: put flexbox styling here
         div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++ msg.content.execution_state, text <| toString msg ]
     Nothing -> div [] []
+
+
+viewServer model = span []
+  [ input [onInput ChangeServer, value model.server] []
+  , select [] <| sessionsToOptions model
+  ]
+
+sessionToOption : Session -> Html Msg
+sessionToOption s = option [] [text s.id]
+
+sessionsToOptions : Model -> List (Html Msg)
+sessionsToOptions model =
+  case model.sessions of
+    Success sessions -> List.map sessionToOption sessions
+    --_ -> [option [disabled True, selected True] [text ""]]
+    _ -> []
+
+
