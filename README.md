@@ -114,6 +114,11 @@ popular front is being served from).
 - [ ] after talk: clean up dependency on indexes for active message. too britle.
 - [ ] make the outgoing execute request valid, so it parses back into a Jmsg
 - [ ] clearing messages should reset focus to Nothing
+- [ ] <- and -> arrows for incoming  and outgoing messages
+- [ ] highlight current message
+- [ ] highlight parent message
+- [ ] highlight by message type
+
 
 
 ### upstream cleanup

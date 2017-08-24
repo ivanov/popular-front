@@ -284,8 +284,7 @@ viewMessage model i msg =
     s = case model.focused of
       Just j -> if i == j then ["background-color" => "orange"] else []
       Nothing -> []
-    state = ": " ++ Maybe.withDefault "" msg.content.execution_state
-    subj = "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ state
+    subj = getSubject msg
     content  = case model.focused of
       Just j -> if i == j then [ strong [] [text <| subj ]] else [text <| subj]
       Nothing -> [text <| subj]
@@ -371,12 +370,32 @@ viewFocused model =
       -- Just msg
       Just (msg, raw) ->
         -- TODO: put flexbox styling here
-        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++
-        (Maybe.withDefault "" msg.content.execution_state)
-       , text <| toString msg ]
+        div [style ["flex" => "1"]] (renderMsg model msg )
        -- , text raw ]
     Nothing -> div [] []
 
+getSubject : Jmsg -> String
+getSubject msg =
+  let
+    state = ": " ++ Maybe.withDefault "" msg.content.execution_state
+  in
+    "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ state
+
+renderMsg : Model -> Jmsg -> List (Html Msg)
+renderMsg model msg =
+  [ table []
+    [ tr []
+      [ td [] [text "Subject:"]
+      , td [] [text (getSubject msg)]
+      ]
+    , tr []
+      [ td [] [text "From:"]
+      , td [] [text "Kernel"]
+      ]
+    ]
+  , text <| "***" ++  msg.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state)
+       , text <| toString msg
+  ]
 
 viewServer model = span []
   [ input [onInput ChangeServer, value model.server] []
