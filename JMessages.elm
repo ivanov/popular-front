@@ -31,7 +31,7 @@ type alias Jmsg =
 type alias JmsgParent_header =
     { date : String
     , msg_id : String
-    , version : String
+    --, version : String
     , msg_type : String
     }
 
@@ -53,7 +53,7 @@ type alias JmsgContentData =
 
 type alias JmsgHeader =
     { username : String
-    , version : String
+    --, version : String
     , msg_type : String
     , msg_id : String
     , session : String
@@ -81,7 +81,7 @@ decodeJmsgParent_header =
     Json.Decode.Pipeline.decode JmsgParent_header
         |> required "date" (Json.Decode.string)
         |> required "msg_id" (Json.Decode.string)
-        |> required "version" (Json.Decode.string)
+        --|> required "version" (Json.Decode.string)
         |> required "msg_type" (Json.Decode.string)
 
 decodeJmsgContent : Json.Decode.Decoder JmsgContent
@@ -104,7 +104,7 @@ decodeJmsgHeader : Json.Decode.Decoder JmsgHeader
 decodeJmsgHeader =
     Json.Decode.Pipeline.decode JmsgHeader
         |> required "username" (Json.Decode.string)
-        |> required "version" (Json.Decode.string)
+        --|> required "version" (Json.Decode.string)
         |> required "msg_type" (Json.Decode.string)
         |> required "msg_id" (Json.Decode.string)
         |> required "session" (Json.Decode.string)
@@ -132,7 +132,7 @@ encodeJmsgParent_header record =
     Json.Encode.object
         [ ("date",  Json.Encode.string <| record.date)
         , ("msg_id",  Json.Encode.string <| record.msg_id)
-        , ("version",  Json.Encode.string <| record.version)
+        --, ("version",  Json.Encode.string <| record.version)
         , ("msg_type",  Json.Encode.string <| record.msg_type)
         ]
 
@@ -146,7 +146,7 @@ encodeJmsgHeader : JmsgHeader -> Json.Encode.Value
 encodeJmsgHeader record =
     Json.Encode.object
         [ ("username",  Json.Encode.string <| record.username)
-        , ("version",  Json.Encode.string <| record.version)
+        --, ("version",  Json.Encode.string <| record.version)
         , ("msg_type",  Json.Encode.string <| record.msg_type)
         , ("msg_id",  Json.Encode.string <| record.msg_id)
         , ("session",  Json.Encode.string <| record.session)

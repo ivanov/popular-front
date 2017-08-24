@@ -6,10 +6,12 @@ import WebSocket
 import Http
 import Task
 import Time exposing (Time, now)
+import Date
 import Json.Decode  exposing (decodeString)
 
 import JMessages exposing (..)
 import JSessions exposing (..)
+import BakedMessages exposing (..)
 
 main =
   Html.program
@@ -89,17 +91,6 @@ ws_url model
     Debug.log "sending ws to..."
      "ws://" ++ model.server ++ "/api/kernels/" ++ s.kernel.id ++ "/channels"
 
-kernel_info_request_msg = """{"header":{"msg_type":  "kernel_info_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
-empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
-error_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
-{"code": "import IPython.displas as d; d.HTML('<b>fancy</b>'"
-,"silent": false , "store_history": true , "user_expressions" : {} , "allow_stdin": true , "stop_on_error": true }, "metadata":{}}"""
-fancy_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
-{"code": "import IPython.displas as d; d.HTML('<b>fancy</b>')"
-,"silent": false , "store_history": true , "user_expressions" : {} , "allow_stdin": true , "stop_on_error": true }, "metadata":{}}"""
-stdout_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
-{"code": "print('hallo JupyterCon!')"
-,"silent": false , "store_history": true , "user_expressions" : {} , "allow_stdin": true , "stop_on_error": true }, "metadata":{}}"""
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -249,10 +240,10 @@ view model =
       ]
     ]
     [ viewStatus model
-    , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton,
+    , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton4, quickHTMLButton,
     quickHTMLButton2, quickHTMLButton3]
     , div [style ["display" => "flex", "flex-direction" => "row"]]
-          [ div [] (viewValidMessages model)
+          [ table [] (viewValidMessages model)
           , viewFocused model]
     , input [onInput Input] []
     , button [onClick Send] [text "Send"]
@@ -284,12 +275,14 @@ viewMessage model i msg =
     s = case model.focused of
       Just j -> if i == j then ["background-color" => "orange"] else []
       Nothing -> []
-    subj = getSubject msg
+    subj = text <| getSubject msg
     content  = case model.focused of
-      Just j -> if i == j then [ strong [] [text <| subj ]] else [text <| subj]
-      Nothing -> [text <| subj]
+      Just j -> if i == j then [strong [] [subj]] else [subj]
+      Nothing -> [subj]
+    with_date = [td [] content, td [] [em []
+      [text <| "" ++ (toString <| Date.fromString msg.header.date)]]]
   in
-    div [style s, onClick (Focus i)] content
+    tr [style s, onClick (Focus i)] with_date
 
 viewRawMessage : Int -> String -> Html Msg
 viewRawMessage i msg =
@@ -354,6 +347,9 @@ quickHTMLButton2 =
 quickHTMLButton3 =
     button [onClick <| Ping stdout_execute_request_msg] [text "get some stdout"]
 
+quickHTMLButton4 =
+    button [onClick <| Ping basic_execute_request_msg] [text "basic execute (2+2)"]
+
 zip = List.map2 (,)
 
 viewFocused : Model -> Html Msg
@@ -370,7 +366,7 @@ viewFocused model =
       -- Just msg
       Just (msg, raw) ->
         -- TODO: put flexbox styling here
-        div [style ["flex" => "1"]] (renderMsg model msg )
+        div [style ["flex" => "1"]] (renderMsg model msg raw)
        -- , text raw ]
     Nothing -> div [] []
 
@@ -381,20 +377,38 @@ getSubject msg =
   in
     "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ state
 
-renderMsg : Model -> Jmsg -> List (Html Msg)
-renderMsg model msg =
+msgFromPart : Jmsg -> String
+msgFromPart msg =
+  -- all "iopub" message come form the kernel"
+  if msg.channel == "iopub" then
+  --  msg_type ==  "status" then
+    (if msg.msg_type == "execute_input" then
+    "Client (via Kernel)" else "Kernel"
+    ) else
+  if String.endsWith "reply" msg.msg_type then
+    "Kernel" else "Client"
+
+msgToPart : Jmsg -> String
+msgToPart msg =
+  if msg.channel == "shell" then
+    "only us (direct)"
+  else
+    msg.channel ++ " listeners"
+
+
+renderMsg : Model -> Jmsg -> String -> List (Html Msg)
+renderMsg model msg raw =
   [ table []
-    [ tr []
-      [ td [] [text "Subject:"]
-      , td [] [text (getSubject msg)]
-      ]
-    , tr []
-      [ td [] [text "From:"]
-      , td [] [text "Kernel"]
-      ]
+    [ tr [] [ td [] [text "Channel:"] , td [] [text (msg.channel)] ]
+    , tr [] [ td [] [text "From:"] , td [] [text (msgFromPart msg)] ]
+    , tr [] [ td [] [text "To:"] , td [] [text (msgToPart msg)] ]
+    , tr [] [ td [] [text "Subject:"] , td [] [text (getSubject msg)] ]
+    , tr [] [ td [] [text "Message ID"] , td [] [text (msg.msg_id)] ]
+    , tr [] [ td [] [text "In-Reply-to:"] , td [] [text (msg.parent_header.msg_id)] ]
     ]
-  , text <| "***" ++  msg.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state)
-       , text <| toString msg
+  , hr [] []
+  -- , text raw
+  -- , text <| "***" ++  msg.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| toString msg
   ]
 
 viewServer model = span []
