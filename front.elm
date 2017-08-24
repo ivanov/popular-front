@@ -91,6 +91,14 @@ ws_url model
 
 kernel_info_request_msg = """{"header":{"msg_type":  "kernel_info_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
 empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
+fancy_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
+{"code": "import IPython.displas as d; d.HTML('<b>fancy</b>'"
+,"silent": false
+, "store_history": true
+, "user_expressions" : {}
+, "allow_stdin": true
+, "stop_on_error": true
+}, "metadata":{}}"""
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -106,10 +114,7 @@ update msg model =
       } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
 
     Ping ->
-      { model
-      | input = ""
-      , sessions = Loading
-      } ! [ WebSocket.send (ws_url model) empty_execute_request_msg ]
+       model ! [ WebSocket.send (ws_url model) fancy_execute_request_msg ]
 
     Send ->
       { model
@@ -185,7 +190,7 @@ update msg model =
     {model | activeSession = Just s} ! [Cmd.none]
 
     ClearAllMessages ->
-    {model |  msgs = []} ! [Cmd.none]
+    {model |  msgs = [], messages= []} ! [Cmd.none]
 
 -- Timezone offset (relative to UTC)
 tz = -7
@@ -235,7 +240,7 @@ view model =
       ]
     ]
     [ viewStatus model
-    , div[] [toggleRenderedStatus model, kernelInfoButton, pingButton]
+    , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton]
     , div [style ["display" => "flex", "flex-direction" => "row"]]
           [ div [] (viewValidMessages model)
           , viewFocused model]
@@ -265,11 +270,14 @@ viewStatus model =
 
 viewMessage : Model -> Int -> Jmsg -> Html Msg
 viewMessage model i msg =
-  let st =  case model.focused of
-    Just j -> if i == j then ["background-color" => "orange"] else []
-    Nothing -> []
+  let
+    s = case model.focused of
+      Just j -> if i == j then ["background-color" => "orange"] else []
+      Nothing -> []
+    state = ": " ++ Maybe.withDefault "" msg.content.execution_state
+    subj = "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ state
   in
-  div [style st, onClick (Focus i)] [ text <| "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ ": " ++ msg.content.execution_state ]
+    div [style s, onClick (Focus i)] [ text <| subj ]
 
 viewRawMessage : Int -> String -> Html Msg
 viewRawMessage i msg =
@@ -325,20 +333,27 @@ kernelInfoButton : Html Msg
 kernelInfoButton =
     button [onClick ConnectKernel] [text "kernel info"]
 
-pingButton =
-    button [onClick Ping] [text "Ping"]
+quickHTMLButton =
+    button [onClick Ping] [text "get a fancy result"]
 
+
+zip = List.map2 (,)
+
+viewFocused : Model -> Html Msg
 viewFocused model =
   case model.focused of
     Just i ->
     let
-      msg = List.head <| List.drop i model.msgs
+      msg_pair = List.head <| List.drop i (zip model.msgs model.messages)
+      --msg_pair = List.head <| List.drop i model.msgs
+      -- = List.head <| List.drop i
     in
-    case msg of
+    case msg_pair of
       Nothing -> div [] []
-      Just msg ->
+      -- Just msg
+      Just (msg, raw) ->
         -- TODO: put flexbox styling here
-        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++ msg.content.execution_state, text <| toString msg ]
+        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| raw ]
     Nothing -> div [] []
 
 
@@ -348,7 +363,7 @@ viewServer model = span []
   ]
 
 sessionToOption : Session -> Html Msg
-sessionToOption s = option [onClick (SetActiveSession s)] [text s.id]
+sessionToOption s = option [onClick (SetActiveSession s)] [text s.notebook.path]
 
 sessionsToOptions : Model -> List (Html Msg)
 sessionsToOptions model =

@@ -100,15 +100,20 @@ popular front is being served from).
     - would make it easier to case switch on message types in rendering
 - [ ] link messages (threaded view)
 - [ ] remove message from the front, too (via one of the sliders)
-- [ ] - add notebook path to list, instead of kernel string
+- [x] - add notebook path to list, instead of kernel string
 - [x] clear messages button...
 - [ ] display messages (mime-type drop down / attachment analogy
 - [ ] better formatting for UI messages (pretty)
 
+- [ ] save outgoing messages... inside our list, probably...
+  -- or in a seperate ("outgoing" queue) - so we don't have to enocde them...
+
+- [ ] make a port for JSON.stringify and call it will null, 2
 
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...
+- [ ] ANSI escape codes in error messages
 
 
 
@@ -119,3 +124,8 @@ popular front is being served from).
 {"header":{"msg_id":"9616C6F009194735873B804684D3EDD2","username":"username","session":"CC87D0D1ED2B455E8083A8AF90A7400A","msg_type":"kernel_info_request","version":"5.0"},"metadata":{},"content":{},"buffers":[],"parent_header":{},"channel":"shell"}
 ```
 
+
+messages to render - show off
+execution
+stdout
+result
