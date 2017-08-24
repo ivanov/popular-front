@@ -114,7 +114,15 @@ update msg model =
       } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
 
     Ping ->
-       model ! [ WebSocket.send (ws_url model) fancy_execute_request_msg ]
+    let
+      new_msgs = case decodeString decodeJmsg fancy_execute_request_msg of
+        Ok m -> [m]
+        Err x -> []
+    in
+       { model
+       | messages = List.append model.messages  [fancy_execute_request_msg]
+       , msgs = List.append model.msgs new_msgs
+       } ! [ WebSocket.send (ws_url model) fancy_execute_request_msg ]
 
     Send ->
       { model

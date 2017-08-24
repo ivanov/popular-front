@@ -108,12 +108,16 @@ popular front is being served from).
 - [ ] save outgoing messages... inside our list, probably...
   -- or in a seperate ("outgoing" queue) - so we don't have to enocde them...
 
-- [ ] make a port for JSON.stringify and call it will null, 2
+- [ ] make a port for JSON.stringify and call it will null, 2...
+    - nope, this will have to wait for later, elm-reactor doesn't support ports
+
+- [ ] after talk: clean up dependency on indexes for active message. too britle.
+- [ ] make the outgoing execute request valid, so it parses back into a Jmsg
 
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...
-- [ ] ANSI escape codes in error messages
+- [ ] ANSI escape codes in execute_reply when there are error messages
 
 
 
