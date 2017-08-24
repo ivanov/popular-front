@@ -63,7 +63,7 @@ type Msg
   | Send
   | ConnectKernel
   | ConnectAPI
-  | Ping
+  | Ping String
   | NewMessage String
   | NewTimeMessage Time String
   | UpdateIndex String
@@ -91,14 +91,15 @@ ws_url model
 
 kernel_info_request_msg = """{"header":{"msg_type":  "kernel_info_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
 empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
-fancy_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
+error_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
 {"code": "import IPython.displas as d; d.HTML('<b>fancy</b>'"
-,"silent": false
-, "store_history": true
-, "user_expressions" : {}
-, "allow_stdin": true
-, "stop_on_error": true
-}, "metadata":{}}"""
+,"silent": false , "store_history": true , "user_expressions" : {} , "allow_stdin": true , "stop_on_error": true }, "metadata":{}}"""
+fancy_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
+{"code": "import IPython.displas as d; d.HTML('<b>fancy</b>')"
+,"silent": false , "store_history": true , "user_expressions" : {} , "allow_stdin": true , "stop_on_error": true }, "metadata":{}}"""
+stdout_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":"hi"}, "parent_header": {}, "content":
+{"code": "print('hallo JupyterCon!')"
+,"silent": false , "store_history": true , "user_expressions" : {} , "allow_stdin": true , "stop_on_error": true }, "metadata":{}}"""
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -113,16 +114,16 @@ update msg model =
       | input = ""
       } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
 
-    Ping ->
+    Ping raw_msg ->
     let
-      new_msgs = case decodeString decodeJmsg fancy_execute_request_msg of
+      new_msgs = case decodeString decodeJmsg raw_msg of
         Ok m -> [m]
         Err x -> []
     in
        { model
-       | messages = List.append model.messages  [fancy_execute_request_msg]
+       | messages = List.append model.messages  [raw_msg]
        , msgs = List.append model.msgs new_msgs
-       } ! [ WebSocket.send (ws_url model) fancy_execute_request_msg ]
+       } ! [ WebSocket.send (ws_url model) raw_msg ]
 
     Send ->
       { model
@@ -195,10 +196,10 @@ update msg model =
       } ! [Cmd.none]
 
     SetActiveSession s ->
-    {model | activeSession = Just s} ! [Cmd.none]
+    { model | activeSession = Just s} ! [Cmd.none]
 
     ClearAllMessages ->
-    {model |  msgs = [], messages= []} ! [Cmd.none]
+    { model |  msgs = [], messages= [], focused=Nothing} ! [Cmd.none]
 
 -- Timezone offset (relative to UTC)
 tz = -7
@@ -248,7 +249,8 @@ view model =
       ]
     ]
     [ viewStatus model
-    , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton]
+    , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton,
+    quickHTMLButton2, quickHTMLButton3]
     , div [style ["display" => "flex", "flex-direction" => "row"]]
           [ div [] (viewValidMessages model)
           , viewFocused model]
@@ -342,8 +344,13 @@ kernelInfoButton =
     button [onClick ConnectKernel] [text "kernel info"]
 
 quickHTMLButton =
-    button [onClick Ping] [text "get a fancy result"]
+    button [onClick <| Ping error_execute_request_msg] [text "get an error"]
 
+quickHTMLButton2 =
+    button [onClick <| Ping fancy_execute_request_msg] [text "get a fancy result"]
+
+quickHTMLButton3 =
+    button [onClick <| Ping stdout_execute_request_msg] [text "get some stdout"]
 
 zip = List.map2 (,)
 
@@ -361,7 +368,10 @@ viewFocused model =
       -- Just msg
       Just (msg, raw) ->
         -- TODO: put flexbox styling here
-        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| raw ]
+        div [style ["flex" => "1"]] [text <| "***" ++  msg.msg_type ++ ": " ++
+        (Maybe.withDefault "" msg.content.execution_state)
+       , text <| toString msg ]
+       -- , text raw ]
     Nothing -> div [] []
 
 

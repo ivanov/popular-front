@@ -113,6 +113,7 @@ popular front is being served from).
 
 - [ ] after talk: clean up dependency on indexes for active message. too britle.
 - [ ] make the outgoing execute request valid, so it parses back into a Jmsg
+- [ ] clearing messages should reset focus to Nothing
 
 
 ### upstream cleanup
@@ -131,5 +132,5 @@ popular front is being served from).
 
 messages to render - show off
 execution
-stdout
+stream (stdout) (content name)
 result
