@@ -101,6 +101,9 @@ popular front is being served from).
 - [ ] link messages (threaded view)
 - [ ] remove message from the front, too (via one of the sliders)
 - [ ] - add notebook path to list, instead of kernel string
+- [x] clear messages button...
+- [ ] display messages (mime-type drop down / attachment analogy
+- [ ] better formatting for UI messages (pretty)
 
 
 

@@ -73,6 +73,7 @@ type Msg
   | ChangeServer String
   | NewSessions (Result Http.Error (List Session))
   | SetActiveSession Session
+  | ClearAllMessages
 
 
 newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
@@ -183,6 +184,9 @@ update msg model =
     SetActiveSession s ->
     {model | activeSession = Just s} ! [Cmd.none]
 
+    ClearAllMessages ->
+    {model |  msgs = []} ! [Cmd.none]
+
 -- Timezone offset (relative to UTC)
 tz = -7
 
@@ -238,6 +242,7 @@ view model =
     , input [onInput Input] []
     , button [onClick Send] [text "Send"]
     , button [onClick <| newMessage  "--- mark --- "] [text "add marker"]
+    , button [onClick ClearAllMessages] [text "Clear all messages"]
         --<| "--- mark --- " ++ (toString <| Task.perform <| \a ->  Time.now )] [text "Add Marker"]
     , div [style ["flex" => "1"]] []
     , viewTimeSlider model
