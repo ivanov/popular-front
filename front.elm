@@ -286,8 +286,11 @@ viewMessage model i msg =
       Nothing -> []
     state = ": " ++ Maybe.withDefault "" msg.content.execution_state
     subj = "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ state
+    content  = case model.focused of
+      Just j -> if i == j then [ strong [] [text <| subj ]] else [text <| subj]
+      Nothing -> [text <| subj]
   in
-    div [style s, onClick (Focus i)] [ text <| subj ]
+    div [style s, onClick (Focus i)] content
 
 viewRawMessage : Int -> String -> Html Msg
 viewRawMessage i msg =
