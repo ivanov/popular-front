@@ -203,16 +203,31 @@ update msg model =
 
     KeyMsgDown code ->
       let focused = case fromCode code of
-        'J' ->  case model.focused of
-          Nothing -> Just 0
-          Just i -> if (i+1 == List.length model.messages)  then Nothing else Just (i+1)
-        'K' -> case model.focused of
-          Nothing -> Just ((List.length model.messages) - 1 )
-          --Just i -> Just (i-1)
-          Just i -> if (i-1 == -1)  then Nothing else Just (i-1)
-        _ ->  model.focused
+        'J' -> downMessage model
+        '(' -> downMessage model
+        'K' -> upMessage model
+        '&' -> upMessage model
+        x ->  let
+            code = Debug.log "keycode" x
+          in
+            model.focused
       in
         { model | focused = focused } ! []
+
+
+downMessage : Model -> Maybe Int
+downMessage model =
+  case model.focused of
+    Nothing -> Just 0
+    Just i -> if (i+1 == List.length model.messages)  then Nothing else Just (i+1)
+
+upMessage : Model -> Maybe Int
+upMessage model =
+  case model.focused of
+    Nothing -> Just ((List.length model.messages) - 1 )
+    --Just i -> Just (i-1)
+    Just i -> if (i-1 == -1)  then Nothing else Just (i-1)
+
 
 -- Timezone offset (relative to UTC)
 tz = -7
