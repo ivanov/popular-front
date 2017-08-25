@@ -14,6 +14,9 @@ import JMessages exposing (..)
 import JSessions exposing (..)
 import BakedMessages exposing (..)
 
+import Keyboard
+import Char exposing (toCode, fromCode)
+
 main =
   Html.program
     { init = init
@@ -77,6 +80,7 @@ type Msg
   | NewSessions (Result Http.Error (List Session))
   | SetActiveSession Session
   | ClearAllMessages
+  | KeyMsgDown Keyboard.KeyCode
 
 
 newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
@@ -197,6 +201,19 @@ update msg model =
     ClearAllMessages ->
     { model |  msgs = [], messages= [], focused=Nothing} ! [Cmd.none]
 
+    KeyMsgDown code ->
+      let focused = case fromCode code of
+        'J' ->  case model.focused of
+          Nothing -> Just 0
+          Just i -> if (i+1 == List.length model.messages)  then Nothing else Just (i+1)
+        'K' -> case model.focused of
+          Nothing -> Just ((List.length model.messages) - 1 )
+          --Just i -> Just (i-1)
+          Just i -> if (i-1 == -1)  then Nothing else Just (i-1)
+        _ ->  model.focused
+      in
+        { model | focused = focused } ! []
+
 -- Timezone offset (relative to UTC)
 tz = -7
 
@@ -228,7 +245,11 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   case model.activeSession of
     Nothing -> Sub.none
-    _ -> WebSocket.listen (ws_url model) NewMessage
+    _ -> Sub.batch
+          [ WebSocket.listen (ws_url model) NewMessage
+          , Keyboard.downs KeyMsgDown
+          ]
+
 
 
 -- VIEW
