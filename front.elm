@@ -8,6 +8,7 @@ import Task
 import Time exposing (Time, now)
 import Date
 import Json.Decode  exposing (decodeString)
+import Json.Encode  exposing (encode)
 
 import JMessages exposing (..)
 import JSessions exposing (..)
@@ -107,13 +108,17 @@ update msg model =
 
     Ping raw_msg ->
     let
+      -- decoding from our sample raw messages doesn't work, let's fake it?
+      x =  Debug.log "oops..."  (raw_msg == basic_execute_request_msg)
       new_msgs = case decodeString decodeJmsg raw_msg of
         Ok m -> [m]
-        Err x -> []
+        Err x -> Debug.log "oops..."  []
+      --  if raw_msg == basic_execute_request_msg then
+      --    [basic_execute_request_msg_] else []
     in
        { model
-       | messages = List.append model.messages  [raw_msg]
-       , msgs = List.append model.msgs new_msgs
+       | messages = model.messages ++ [raw_msg]
+       , msgs = model.msgs ++ new_msgs
        } ! [ WebSocket.send (ws_url model) raw_msg ]
 
     Send ->
@@ -241,9 +246,9 @@ view model =
     ]
     [ viewStatus model
     , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton4, quickHTMLButton,
-    quickHTMLButton2, quickHTMLButton3]
+    quickHTMLButton3, quickHTMLButton2]
     , div [style ["display" => "flex", "flex-direction" => "row"]]
-          [ table [] (viewValidMessages model)
+          [ table [style []] (viewValidMessages model)
           , viewFocused model]
     , input [onInput Input] []
     , button [onClick Send] [text "Send"]
@@ -279,14 +284,21 @@ viewMessage model i msg =
     content  = case model.focused of
       Just j -> if i == j then [strong [] [subj]] else [subj]
       Nothing -> [subj]
-    with_date = [td [] content, td [] [em []
-      [text <| "" ++ (toString <| Date.fromString msg.header.date)]]]
+    with_date =
+      [ td [ style ["height" => "24px", "width" => "24px"]]
+          [ em []
+            [
+            --text <| "10:50" -- ++ (toString <| Date.fromString msg.header.date)
+            text <| toString i --"10:50" -- ++ (toString <| Date.fromString msg.header.date)
+            ]
+          ]
+      , td [] content ]
   in
     tr [style s, onClick (Focus i)] with_date
 
 viewRawMessage : Int -> String -> Html Msg
 viewRawMessage i msg =
-  div [onClick (Focus i)] [ text msg , hr [] [] ]
+  div [onClick (Focus i)] [ pre [] [text msg , hr [] [] ]]
 
 
 viewValidMessages : Model -> List (Html Msg)
@@ -366,7 +378,7 @@ viewFocused model =
       -- Just msg
       Just (msg, raw) ->
         -- TODO: put flexbox styling here
-        div [style ["flex" => "1"]] (renderMsg model msg raw)
+        div [style ["border" => "2px solid", "padding" => "5px", "flex" => "1"]] (renderMsg model msg raw)
        -- , text raw ]
     Nothing -> div [] []
 
@@ -375,17 +387,17 @@ getSubject msg =
   let
     state = ": " ++ Maybe.withDefault "" msg.content.execution_state
   in
-    "(" ++ msg.channel ++ ") " ++ msg.msg_type ++ state
+    "(" ++ msg.channel ++ ") " ++ msg.header.msg_type ++ state
 
 msgFromPart : Jmsg -> String
 msgFromPart msg =
   -- all "iopub" message come form the kernel"
   if msg.channel == "iopub" then
   --  msg_type ==  "status" then
-    (if msg.msg_type == "execute_input" then
+    (if msg.header.msg_type == "execute_input" then
     "Client (via Kernel)" else "Kernel"
     ) else
-  if String.endsWith "reply" msg.msg_type then
+  if String.endsWith "reply" msg.header.msg_type then
     "Kernel" else "Client"
 
 msgToPart : Jmsg -> String
@@ -403,12 +415,15 @@ renderMsg model msg raw =
     , tr [] [ td [] [text "From:"] , td [] [text (msgFromPart msg)] ]
     , tr [] [ td [] [text "To:"] , td [] [text (msgToPart msg)] ]
     , tr [] [ td [] [text "Subject:"] , td [] [text (getSubject msg)] ]
-    , tr [] [ td [] [text "Message ID"] , td [] [text (msg.msg_id)] ]
+    , tr [] [ td [] [text "Message ID"] , td [] [text (msg.header.msg_id)] ]
     , tr [] [ td [] [text "In-Reply-to:"] , td [] [text (msg.parent_header.msg_id)] ]
     ]
   , hr [] []
-  -- , text raw
-  -- , text <| "***" ++  msg.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| toString msg
+  -- , pre [] [text <| encode 2 raw]
+  --, pre [] [text <| encode 2 (encodeJmsg msg)]
+  -- , text <| encode 2 raw
+  , text raw
+  -- , text <| "***" ++  msg.header.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| toString msg
   ]
 
 viewServer model = span []

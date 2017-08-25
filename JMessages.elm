@@ -19,8 +19,8 @@ import Json.Decode.Pipeline exposing (required, optional)
 -- output done via http://eeue56.github.io/json-to-elm/
 type alias Jmsg =
     { parent_header : JmsgParent_header
-    , msg_type : String
-    , msg_id : String
+    --, msg_type : String
+    -- , msg_id : String
     , content : JmsgContent
     , header : JmsgHeader
     , channel : String
@@ -68,11 +68,11 @@ decodeJmsg : Json.Decode.Decoder Jmsg
 decodeJmsg =
     Json.Decode.Pipeline.decode Jmsg
         |> required "parent_header" (decodeJmsgParent_header)
-        |> required "msg_type" (Json.Decode.string)
-        |> required "msg_id" (Json.Decode.string)
+        -- |> required "msg_type" (Json.Decode.string)
+        -- |> required "msg_id" (Json.Decode.string)
         |> required "content" (decodeJmsgContent)
         |> required "header" (decodeJmsgHeader)
-        |> required "channel" (Json.Decode.string)
+        |> optional "channel" (Json.Decode.string) "shell"
         -- |> required "buffers" (Json.Decode.list decodeComplexType)
         |> required "metadata" (decodeJmsgMetadata)
 
@@ -119,8 +119,8 @@ encodeJmsg : Jmsg -> Json.Encode.Value
 encodeJmsg record =
     Json.Encode.object
         [ ("parent_header",  encodeJmsgParent_header <| record.parent_header)
-        , ("msg_type",  Json.Encode.string <| record.msg_type)
-        , ("msg_id",  Json.Encode.string <| record.msg_id)
+        --, ("msg_type",  Json.Encode.string <| record.msg_type)
+        --, ("msg_id",  Json.Encode.string <| record.msg_id)
         , ("content",  encodeJmsgContent <| record.content)
         , ("header",  encodeJmsgHeader <| record.header)
         , ("channel",  Json.Encode.string <| record.channel)

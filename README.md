@@ -38,7 +38,7 @@ Now start a jupyter notebook server, making sure to pass the `allow_origin`
 parameter which specifies the URL the elm-reactor is serving to, like so:
 
 ```
-jupyter notebook --NotebookApp.allow_origin="http://localhost:8000"` --NotebookApp.token='' --NotebookApp.password=''
+jupyter notebook --NotebookApp.allow_origin="http://localhost:8000" --NotebookApp.token='' --NotebookApp.password=''
 ```
 
 
