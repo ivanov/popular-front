@@ -118,8 +118,9 @@ popular front is being served from).
 - [ ] highlight current message
 - [ ] highlight parent message
 - [ ] highlight by message type
-- [ ] arrow keys to go through messages
+- [x] arrow keys to go through messages
 - [ ] timestamp on subject...
+- [x] clear messages when switching kernels / notebooks
 
 
 
