@@ -4,6 +4,7 @@ module BakedMessages exposing
   , basic_execute_request_msg
   , fancy_execute_request_msg
   , stdout_execute_request_msg
+  , resource_info_request_msg
   )
 
 
@@ -104,6 +105,23 @@ basic_execute_request_msg = """
   "parent_header": {},
   "channel": "shell"
 
+}
+"""
+
+resource_info_request_msg = """
+{
+  "header": {
+    "msg_id": "E349BA77DB1642E88EC2E1450B3E16C1",
+    "username": "something",
+    "session": "47F4106072824F45A3D2CF209C44C479",
+    "msg_type": "resource_info_request",
+    "version": "5.0"
+  },
+  "metadata": {},
+  "content": {},
+  "buffers": [],
+  "parent_header": {},
+  "channel": "shell"
 }
 """
 

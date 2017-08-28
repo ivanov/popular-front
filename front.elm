@@ -40,6 +40,7 @@ type alias Model =
   , server : String
   , sessions : RemoteData Http.Error (List Session)
   , activeSession : Maybe Session
+  , status : String
   }
 
 
@@ -56,6 +57,7 @@ init = (
   , sessions = NotAsked
   --, sessions = Success sampleSessions
   , activeSession = Nothing
+  , status = ""
   }
   --, Cmd.none)
   , Task.perform identity (Task.succeed ConnectAPI))
@@ -81,6 +83,7 @@ type Msg
   | SetActiveSession Session
   | ClearAllMessages
   | KeyMsgDown Keyboard.KeyCode
+  | Status String
 
 
 newMessage str = GetTimeAndThen (\time -> NewTimeMessage time str)
@@ -214,6 +217,9 @@ update msg model =
       in
         { model | focused = focused } ! []
 
+    Status s ->
+    { model | status = s } ! []
+
 
 downMessage : Model -> Maybe Int
 downMessage model =
@@ -282,7 +288,7 @@ view model =
     ]
     [ viewStatus model
     , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton4, quickHTMLButton,
-    quickHTMLButton3, quickHTMLButton2]
+    quickHTMLButton3, quickHTMLButton2, quickHTMLButton5]
     , div [style ["display" => "flex", "flex-direction" => "row"]]
           [ table [style []] (viewValidMessages model)
           , viewFocused model]
@@ -306,9 +312,15 @@ viewStatus model =
         Success _ -> ("green", "Connected")
         Failure x -> ("red", "Failed to connect")
   in
-    div [style ["background-color" => color]] [viewServer model, text message]
+    div [style ["display" => "flex", "background-color" => color]] [viewServer model, spacer, text message, spacer,   viewStatusText model]
 
 
+spacer : Html Msg
+spacer = span [style ["width" => "30px"]] []
+
+viewStatusText : Model -> Html Msg
+viewStatusText model =
+  span [style ["background-color" => "white", "flex" => "2"]] [text model.status]
 
 viewMessage : Model -> Int -> Jmsg -> Html Msg
 viewMessage model i msg =
@@ -397,6 +409,13 @@ quickHTMLButton3 =
 
 quickHTMLButton4 =
     button [onClick <| Ping basic_execute_request_msg] [text "basic execute (2+2)"]
+
+quickHTMLButton5 =
+  button
+    [ onClick <| Ping resource_info_request_msg
+    , onMouseOver <| Status "Requires ivanov's ipykernel branch"
+    , onMouseOut <| Status ""
+    ] [ text "resource info request"]
 
 zip = List.map2 (,)
 
