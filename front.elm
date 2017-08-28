@@ -199,7 +199,11 @@ update msg model =
       } ! [Cmd.none]
 
     SetActiveSession s ->
-    update ClearAllMessages { model | activeSession = Just s}
+      case model.activeSession == Just s of
+        True ->
+          model ! [] -- Noop
+        False ->
+          update ClearAllMessages { model | activeSession = Just s}
 
     ClearAllMessages ->
     { model |  msgs = [], messages= [], focused=Nothing} ! [Cmd.none]
