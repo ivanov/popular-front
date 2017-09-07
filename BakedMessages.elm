@@ -14,6 +14,9 @@ kernel_info_request_msg = """
 {
   "header": {
     "msg_type": "kernel_info_request",
+    "username": "yo",
+    "session": "sessionyo",
+    "date": "sup",
     "msg_id": "f7793152-20a1e0729ce836887c79c611"
   },
   "parent_header": {},
@@ -32,7 +35,7 @@ error_execute_request_msg = """
   },
   "parent_header": {},
   "content": {
-    "code": "import IPython.displas as d; d.HTML('<b>fancy</b>'",
+    "code": "import IPython.displas as d; d.HTML('I\'m a <b>fancy</b> <i>kind</i> of message'",
     "silent": false,
     "store_history": true,
     "user_expressions": {},
@@ -66,6 +69,9 @@ stdout_execute_request_msg = """
 {
   "header": {
     "msg_type": "execute_request",
+    "username": "yo",
+    "session": "sessionyo",
+    "date": "",
     "msg_id": "7d2c0b07-56bbeb2574a05672fbafe450"
   },
   "parent_header": {},

@@ -70,19 +70,19 @@ decodeJmsg =
         |> required "parent_header" (decodeJmsgParent_header)
         -- |> required "msg_type" (Json.Decode.string)
         -- |> required "msg_id" (Json.Decode.string)
-        |> required "content" (decodeJmsgContent)
+        |> optional  "content" (decodeJmsgContent) (JmsgContent Nothing Nothing )
         |> required "header" (decodeJmsgHeader)
         |> optional "channel" (Json.Decode.string) "shell"
         -- |> required "buffers" (Json.Decode.list decodeComplexType)
-        |> required "metadata" (decodeJmsgMetadata)
+        |> optional "metadata" (decodeJmsgMetadata) {}
 
 decodeJmsgParent_header : Json.Decode.Decoder JmsgParent_header
 decodeJmsgParent_header =
     Json.Decode.Pipeline.decode JmsgParent_header
-        |> required "date" (Json.Decode.string)
-        |> required "msg_id" (Json.Decode.string)
+        |> optional "date" Json.Decode.string "SOMETIME"
+        |> optional "msg_id" (Json.Decode.string) "blank_msg_id"
         --|> required "version" (Json.Decode.string)
-        |> required "msg_type" (Json.Decode.string)
+        |> optional "msg_type" (Json.Decode.string) "some_msg_type"
 
 decodeJmsgContent : Json.Decode.Decoder JmsgContent
 decodeJmsgContent =
@@ -94,10 +94,10 @@ decodeJmsgContent =
 decodeJmsgContentData : Json.Decode.Decoder JmsgContentData
 decodeJmsgContentData =
   Json.Decode.Pipeline.decode JmsgContentData
-    |> required "text/html" (maybe string)
-    |> required "text/plain" (maybe string)
-    |> required "code" (maybe string)
-    |> required "execution_count" (maybe int)
+    |> optional "text/html" (maybe string) Nothing
+    |> optional "text/plain" (maybe string) Nothing
+    |> optional "code" (maybe string) Nothing
+    |> optional "execution_count" (maybe int) Nothing
 
 
 decodeJmsgHeader : Json.Decode.Decoder JmsgHeader
@@ -108,7 +108,7 @@ decodeJmsgHeader =
         |> required "msg_type" (Json.Decode.string)
         |> required "msg_id" (Json.Decode.string)
         |> required "session" (Json.Decode.string)
-        |> required "date" (Json.Decode.string)
+        |> optional "date" (Json.Decode.string) "NODATE"
 
 decodeJmsgMetadata : Json.Decode.Decoder JmsgMetadata
 decodeJmsgMetadata =

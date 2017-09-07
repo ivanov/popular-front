@@ -121,7 +121,11 @@ popular front is being served from).
 - [x] arrow keys to go through messages
 - [ ] timestamp on subject...
 - [x] clear messages when switching kernels / notebooks
-
+- [ ] restart a kernel from the UI (for making changes)
+- [x] rendering mime bundles on the page
+      - using innerHtml property in virtualdom?
+- [ ] fix off by one error in msg + rawMsg stuff.
+- [ ] use oneOf decoders for splitting message types
 
 
 ### upstream cleanup

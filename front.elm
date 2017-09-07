@@ -9,6 +9,7 @@ import Time exposing (Time, now)
 import Date
 import Json.Decode  exposing (decodeString)
 import Json.Encode  exposing (encode)
+import VirtualDom
 
 import JMessages exposing (..)
 import JSessions exposing (..)
@@ -81,6 +82,8 @@ type Msg
   | ChangeServer String
   | NewSessions (Result Http.Error (List Session))
   | SetActiveSession Session
+  | RestartActiveSession
+  | RestartActiveSessionResult (Result Http.Error Json.Decode.Value)
   | ClearAllMessages
   | KeyMsgDown Keyboard.KeyCode
   | Status String
@@ -98,6 +101,10 @@ ws_url model
   Just s ->
     Debug.log "sending ws to..."
      "ws://" ++ model.server ++ "/api/kernels/" ++ s.kernel.id ++ "/channels"
+
+restart_session_url : Model -> String
+restart_session_url model
+  = String.join "http:" <| String.split "ws:" <| String.join "/restart?token=" <| String.split "/channels" (ws_url model)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -119,7 +126,7 @@ update msg model =
       x =  Debug.log "oops..."  (raw_msg == basic_execute_request_msg)
       new_msgs = case decodeString decodeJmsg raw_msg of
         Ok m -> [m]
-        Err x -> Debug.log "oops..."  []
+        Err x -> Debug.log ("oops..." ++ toString raw_msg)  []
       --  if raw_msg == basic_execute_request_msg then
       --    [basic_execute_request_msg_] else []
     in
@@ -205,21 +212,31 @@ update msg model =
         False ->
           update ClearAllMessages { model | activeSession = Just s}
 
+    RestartActiveSession ->
+    { model |  status="Restarting" } ! [getSessionRestart model]
+
+    RestartActiveSessionResult r->
+    { model |  status="Restart success" } ! [Cmd.none]
+
     ClearAllMessages ->
     { model |  msgs = [], messages= [], focused=Nothing} ! [Cmd.none]
 
     KeyMsgDown code ->
-      let focused = case fromCode code of
-        'J' -> downMessage model
-        '(' -> downMessage model
-        'K' -> upMessage model
-        '&' -> upMessage model
-        x ->  let
-            code = Debug.log "keycode" x
-          in
-            model.focused
+      let
+        focused = case fromCode code of
+          'J' -> downMessage model
+          '(' -> downMessage model
+          'K' -> upMessage model
+          '&' -> upMessage model
+          x ->  let
+              code = Debug.log "keycode" x
+            in
+              model.focused
+        (new_model, commands) = case fromCode code of
+          'C' -> update ClearAllMessages model
+          _ -> (model ! [])
       in
-        { model | focused = focused } ! []
+        { new_model | focused = focused } ! [commands]
 
     Status s ->
     { model | status = s } ! []
@@ -263,6 +280,13 @@ getSession model =
     request = Debug.log "calling url" Http.get (api_url model) decodeSessions
   in
     Http.send NewSessions request
+
+getSessionRestart : Model -> Cmd Msg
+getSessionRestart model =
+  let
+    request = Debug.log "calling url" Http.post (restart_session_url model) Http.emptyBody Json.Decode.value
+  in
+    Http.send RestartActiveSessionResult request
 
 -- SUBSCRIPTIONS
 
@@ -316,8 +340,13 @@ viewStatus model =
         Success _ -> ("green", "Connected")
         Failure x -> ("red", "Failed to connect")
   in
-    div [style ["display" => "flex", "background-color" => color]] [viewServer model, spacer, text message, spacer,   viewStatusText model]
+    div [style ["display" => "flex", "backgroundColor" => color]] [viewServer model, viewActiveSession message,    viewStatusText model]
 
+viewActiveSession : String -> Html Msg
+viewActiveSession statusText =
+  span
+    [style ["style" => "box"]]
+    [spacer, text statusText, spacer, button [onClick RestartActiveSession] [text "Restart"]]
 
 spacer : Html Msg
 spacer = span [style ["width" => "30px"]] []
@@ -481,9 +510,30 @@ renderMsg model msg raw =
   -- , pre [] [text <| encode 2 raw]
   --, pre [] [text <| encode 2 (encodeJmsg msg)]
   -- , text <| encode 2 raw
+  , renderMimeBundles msg
   , text raw
   -- , text <| "***" ++  msg.header.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| toString msg
   ]
+
+renderMimeBundles : Jmsg -> Html Msg
+renderMimeBundles msg =
+  case msg.content.data of
+    Nothing -> div [innerHtml "No <b> content</b> :\\"] []
+    Just data -> div []
+      [ div [asHtml data.text_html] [text "text/html"]
+      , div [asHtml data.text_plain] [text "plain"]
+      , div [asHtml data.code] [text "code"]
+      ]
+
+asHtml : Maybe String -> Attribute Msg
+asHtml c =
+  case c of
+    Nothing -> innerHtml ""
+    Just s -> innerHtml s
+
+innerHtml : String -> Html.Attribute Msg
+innerHtml s =
+  VirtualDom.property "innerHTML" <| Json.Encode.string s
 
 viewServer model = span []
   [ input [onInput ChangeServer, value model.server] []
