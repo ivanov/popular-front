@@ -38,7 +38,7 @@ Now start a jupyter notebook server, making sure to pass the `allow_origin`
 parameter which specifies the URL the elm-reactor is serving to, like so:
 
 ```
-jupyter notebook --NotebookApp.allow_origin="http://localhost:8000" --NotebookApp.token='' --NotebookApp.password=''
+jupyter notebook --NotebookApp.allow_origin="http://localhost:8000" --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.disable_check_xsrf=True
 ```
 
 
@@ -126,6 +126,7 @@ popular front is being served from).
       - using innerHtml property in virtualdom?
 - [ ] fix off by one error in msg + rawMsg stuff.
 - [ ] use oneOf decoders for splitting message types
+- [ ] proper pre-flight xsrf token request handling
 
 
 ### upstream cleanup

@@ -83,7 +83,7 @@ type Msg
   | NewSessions (Result Http.Error (List Session))
   | SetActiveSession Session
   | RestartActiveSession
-  | RestartActiveSessionResult (Result Http.Error Json.Decode.Value)
+  | RestartActiveSessionResult (Result Http.Error ())
   | ClearAllMessages
   | KeyMsgDown Keyboard.KeyCode
   | Status String
@@ -144,7 +144,8 @@ update msg model =
     NewMessage str ->
     let
       latest = case decodeString decodeJmsg str of
-        Ok jmsg -> [(Debug.log "IT WORKS" jmsg)]
+        -- Ok jmsg -> [(Debug.log "Successfull decoded: " jmsg)]
+        Ok jmsg -> [jmsg]
         Err msg -> let error = (Debug.log "Nope" msg)
                   in []
     in
@@ -197,7 +198,7 @@ update msg model =
     NewSessions result ->
     let
       new_sessions = case result of
-        Ok sessions -> Debug.log "hallo" Success sessions
+        Ok sessions ->  Success (Debug.log "New sessions result: " sessions)
         Err x ->  Debug.log "failure" Failure x
     in
       { model
@@ -215,7 +216,7 @@ update msg model =
     RestartActiveSession ->
     { model |  status="Restarting" } ! [getSessionRestart model]
 
-    RestartActiveSessionResult r->
+    RestartActiveSessionResult r ->
     { model |  status="Restart success" } ! [Cmd.none]
 
     ClearAllMessages ->
@@ -225,15 +226,17 @@ update msg model =
       let
         focused = case fromCode code of
           'J' -> downMessage model
-          '(' -> downMessage model
+          '(' -> downMessage model -- ( is down arrow
           'K' -> upMessage model
-          '&' -> upMessage model
+          '&' -> upMessage model -- & is up arrow
           x ->  let
               code = Debug.log "keycode" x
             in
               model.focused
         (new_model, commands) = case fromCode code of
           'C' -> update ClearAllMessages model
+          'R' -> update (Ping resource_info_request_msg) model
+          '¾' -> update RestartActiveSession model -- ¾ is .
           _ -> (model ! [])
       in
         { new_model | focused = focused } ! [commands]
@@ -272,21 +275,41 @@ api_url model =
 -- TODO: this is brittle - we should check if there's already a leading http://
 -- in the url and not add it to the front in that case
 -- TODO: support tokens and password
-  Debug.log "URL is: " "http://" ++ model.server ++ "/api/sessions"
+  "http://" ++ model.server ++ "/api/sessions"
 
 getSession : Model -> Cmd Msg
 getSession model =
   let
-    request = Debug.log "calling url" Http.get (api_url model) decodeSessions
+    request =  Http.get (Debug.log "Sessions API url: " (api_url model)) decodeSessions
   in
     Http.send NewSessions request
 
 getSessionRestart : Model -> Cmd Msg
 getSessionRestart model =
   let
-    request = Debug.log "calling url" Http.post (restart_session_url model) Http.emptyBody Json.Decode.value
+    request = Debug.log "calling url" (restart_session_request  model)
+    --Http.post (restart_session_url model) Http.emptyBody Json.Decode.value
   in
     Http.send RestartActiveSessionResult request
+
+
+
+restart_session_request model =
+  Http.request
+    { method = "POST"
+    , headers = []
+    -- , headers = [xsrf_header] -- disable_check_xsrf=True and you don't need this.
+    , url = restart_session_url model
+    , body = Http.emptyBody
+    , withCredentials = True
+    , expect = Http.expectStringResponse (\_ -> Ok ())
+    , timeout = Nothing
+    }
+
+
+-- --NotebookApp.disable_check_xsrf=True eliminated the need for this
+xsrf_cookie = Http.header "Cookie" "_xsrf=2|30bc50cd|8c06faa1a9c8b6336386346ae8415c04|1505762830"
+xsrf_header = Http.header "X-XSRFToken"  "2|30bc50cd|8c06faa1a9c8b6336386346ae8415c04|1505762830"
 
 -- SUBSCRIPTIONS
 
@@ -323,7 +346,7 @@ view model =
     , input [onInput Input] []
     , button [onClick Send] [text "Send"]
     , button [onClick <| newMessage  "--- mark --- "] [text "add marker"]
-    , button [onClick ClearAllMessages] [text "Clear all messages"]
+    , button [onClick ClearAllMessages] [text "(C)lear all messages"]
         --<| "--- mark --- " ++ (toString <| Task.perform <| \a ->  Time.now )] [text "Add Marker"]
     , div [style ["flex" => "1"]] []
     , viewTimeSlider model
@@ -448,7 +471,7 @@ quickHTMLButton5 =
     [ onClick <| Ping resource_info_request_msg
     , onMouseOver <| Status "Requires ivanov's ipykernel branch"
     , onMouseOut <| Status ""
-    ] [ text "resource info request"]
+    ] [ text "(r)esource info request"]
 
 zip = List.map2 (,)
 
