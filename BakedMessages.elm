@@ -18,7 +18,7 @@ kernel_info_request_msg = """
     "username": "yo",
     "session": "sessionyo",
     "date": "sup",
-    "msg_id": "f7793152-20a1e0729ce836887c79c611"
+    "msg_id": ""
   },
   "parent_header": {},
   "content": {},
@@ -26,13 +26,13 @@ kernel_info_request_msg = """
 }
 """
 
-empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id":""}, "parent_header": {}, "metadata":{}}"""
+empty_execute_request_msg = """{"header":{"msg_type":  "execute_request", "msg_id": ""}, "parent_header": {}, "metadata":{}}"""
 
 error_execute_request_msg = """
 {
   "header": {
     "msg_type": "execute_request",
-    "msg_id": "2282972d-858548e9788469565e4d1984"
+    "msg_id": ""
   },
   "parent_header": {},
   "content": {
@@ -51,7 +51,7 @@ fancy_execute_request_msg = """
 {
   "header": {
     "msg_type": "execute_request",
-    "msg_id": "c81b7217-e75dbf6e838637710e829864"
+    "msg_id": ""
   },
   "parent_header": {},
   "content": {
@@ -73,7 +73,7 @@ stdout_execute_request_msg = """
     "username": "yo",
     "session": "sessionyo",
     "date": "",
-    "msg_id": "7d2c0b07-56bbeb2574a05672fbafe450"
+    "msg_id": ""
   },
   "parent_header": {},
   "content": {
@@ -93,7 +93,7 @@ stdout_execute_request_msg = """
 basic_execute_request_msg = """
 {
   "header": {
-    "msg_id": "D349AA77DB1642E88EC2E1450B3E16C1",
+    "msg_id": "",
     "username": "username",
     "session": "37F4106072824F45A3D2CF209C44C479",
     "msg_type": "execute_request",
@@ -121,7 +121,7 @@ sleep_request_msg = String.split "2+2" basic_execute_request_msg |> String.join 
 resource_info_request_msg = """
 {
   "header": {
-    "msg_id": "E349BA77DB1642E88EC2E1450B3E16C1",
+    "msg_id": "",
     "username": "something",
     "session": "47F4106072824F45A3D2CF209C44C479",
     "msg_type": "resource_info_request",
@@ -135,6 +135,7 @@ resource_info_request_msg = """
 }
 """
 
+  --"channel": "control"
 --basic_execute_request_msg_ : Jmsg
 --basic_execute_request_msg_ =
 --  {
@@ -150,7 +151,7 @@ resource_info_request_msg = """
 --    },
 --    "buffers": [],
 --    {
---      "msg_id": "D349AA77DB1642E88EC2E1450B3E16C1",
+--      "msg_id": "",
 --      "username": "username",
 --      "session": "37F4106072824F45A3D2CF209C44C479",
 --      "msg_type": "execute_request",

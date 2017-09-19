@@ -74,28 +74,28 @@ popular front is being served from).
 - [x] let's send a kernel_info_request on initial load...
 - [x] toggle raw and rendered message mode....
 
-- [ ] let's get the sessions object (across origins) and go from there...
+- [x] let's get the sessions object (across origins) and go from there...
     http://localhost:8888/api/sessions
 - [x] make websocket port part of model
 - [x] make server url + port part of model
 - [x] specify server url + port in UI (assumes localhost)
 - [ ] fetch api/sessions on server url change (to see if connected)
     - [ ] timeout the fetching of api/sessions / deal with errors
-- [ ] specify whole connection URL in UI (via dropdown)
+- [x] specify whole connection URL in UI (via dropdown)
 - [ ] make a drop down for mime-types in display/execute_reply messages
-- [ ] prettify message rendering
+- [x] prettify message rendering
 - [ ] - (minor)  - leading 0 formatting  for single digit time values
 
 - [x] status - connected or not...
 - [ ] filter out status messages to their own queue (gets visually busy otherwise...)
     - like mailbox smart filter
 - [ ] "view raw" version of a message, once we get rendering done properly
-- [ ] specify the right channel for outgoing messages
+- [x] specify the right channel for outgoing messages
     - [I 21:27:55.821 NotebookApp] Adapting to protocol v5.1 for kernel
       57cd23b2-e6b1-4458-93ed-2c513b0442ca [W 21:28:19.603 NotebookApp] No
       channel specified, assuming shell
 - [ ] use wss? (secure websockets)
-- [ ] hook up arrow keys for changing message in focus
+- [x] hook up arrow keys for changing message in focus
 - [ ] make simpler messages by type... (StatusMessage ....)
     - would make it easier to case switch on message types in rendering
 - [ ] link messages (threaded view)
@@ -105,8 +105,8 @@ popular front is being served from).
 - [ ] display messages (mime-type drop down / attachment analogy
 - [ ] better formatting for UI messages (pretty)
 
-- [ ] save outgoing messages... inside our list, probably...
-  -- or in a seperate ("outgoing" queue) - so we don't have to enocde them...
+- [x] save outgoing messages... inside our list, probably...
+  -- or in a seperate ("outgoing" queue) - so we don't have to encode them...
 
 - [ ] make a port for JSON.stringify and call it will null, 2...
     - nope, this will have to wait for later, elm-reactor doesn't support ports
@@ -121,10 +121,10 @@ popular front is being served from).
 - [x] arrow keys to go through messages
 - [ ] timestamp on subject...
 - [x] clear messages when switching kernels / notebooks
-- [ ] restart a kernel from the UI (for making changes)
+- [x] restart a kernel from the UI (for making changes)
 - [x] rendering mime bundles on the page
       - using innerHtml property in virtualdom?
-- [ ] fix off by one error in msg + rawMsg stuff.
+- [x] fix off by one error in msg + rawMsg stuff.
 - [ ] use oneOf decoders for splitting message types
 - [ ] proper pre-flight xsrf token request handling
 

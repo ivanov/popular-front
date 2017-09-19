@@ -8,6 +8,7 @@ module JMessages exposing
   , JmsgParent_header
   , decodeJmsg
   , encodeJmsg
+  , brokenJmsg
   )
 
 import Json.Encode
@@ -157,3 +158,14 @@ encodeJmsgMetadata : JmsgMetadata -> Json.Encode.Value
 encodeJmsgMetadata record =
     Json.Encode.object
         []
+
+
+
+brokenJmsg: String -> Jmsg
+brokenJmsg s =
+  Jmsg
+  {date="broken", msg_id= "broken", msg_type="hi"} -- parentHeader
+  {execution_state=Just s, data=Nothing}
+  {username="luser", msg_type="broken", msg_id="broken", date="broken", session="broken"}
+  "broken"
+  {}

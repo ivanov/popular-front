@@ -129,16 +129,20 @@ update msg model =
     let
       -- decoding from our sample raw messages doesn't work, let's fake it?
       x =  Debug.log "oops..."  (raw_msg == basic_execute_request_msg)
-      new_msgs = case decodeString decodeJmsg raw_msg of
+      -- try to set the msg_id here, so it's unique...
+
+      outgoing = String.split "msg_id\": \"\"" raw_msg |> String.join "msg_id\": \"hi\""
+
+      new_msgs = case decodeString decodeJmsg outgoing of
         Ok m -> [m]
-        Err x -> Debug.log ("oops..." ++ toString raw_msg)  []
+        Err x -> Debug.log ("oops..." ++ toString outgoing)  [ brokenJmsg outgoing]
       --  if raw_msg == basic_execute_request_msg then
       --    [basic_execute_request_msg_] else []
     in
        { model
-       | messages = model.messages ++ [raw_msg]
+       | messages = model.messages ++ [outgoing]
        , msgs = model.msgs ++ new_msgs
-       } ! [ WebSocket.send (ws_url model) raw_msg ]
+       } ! [ WebSocket.send (ws_url model) outgoing ]
 
     Send ->
       { model
