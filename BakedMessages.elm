@@ -5,6 +5,7 @@ module BakedMessages exposing
   , fancy_execute_request_msg
   , stdout_execute_request_msg
   , resource_info_request_msg
+  , sleep_request_msg
   )
 
 
@@ -113,6 +114,9 @@ basic_execute_request_msg = """
 
 }
 """
+
+-- Still kind of bonkers that there's no String.replace
+sleep_request_msg = String.split "2+2" basic_execute_request_msg |> String.join "import time; time.sleep(10)"
 
 resource_info_request_msg = """
 {

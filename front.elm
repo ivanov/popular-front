@@ -84,6 +84,8 @@ type Msg
   | SetActiveSession Session
   | RestartActiveSession
   | RestartActiveSessionResult (Result Http.Error ())
+  | InterruptActiveSession
+  | InterruptActiveSessionResult (Result Http.Error ())
   | ClearAllMessages
   | KeyMsgDown Keyboard.KeyCode
   | Status String
@@ -106,6 +108,9 @@ restart_session_url : Model -> String
 restart_session_url model
   = String.join "http:" <| String.split "ws:" <| String.join "/restart?token=" <| String.split "/channels" (ws_url model)
 
+interrupt_session_url : Model -> String
+interrupt_session_url model
+  = String.join "http:" <| String.split "ws:" <| String.join "/interrupt" <| String.split "/channels" (ws_url model)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -219,6 +224,18 @@ update msg model =
     RestartActiveSessionResult r ->
     { model |  status="Restart success" } ! [Cmd.none]
 
+    InterruptActiveSession ->
+    { model |  status="Interrupting" } ! [getSessionInterrupt model]
+
+    InterruptActiveSessionResult r ->
+    -- let
+    --   status = case r of
+    --               Ok _  -> "Interrupt sucess"
+    --               _ -> "Error"
+    -- in
+      { model |  status="Interrupted" } ! [Cmd.none]
+
+
     ClearAllMessages ->
     { model |  msgs = [], messages= [], focused=Nothing} ! [Cmd.none]
 
@@ -236,7 +253,9 @@ update msg model =
         (new_model, commands) = case fromCode code of
           'C' -> update ClearAllMessages model
           'R' -> update (Ping resource_info_request_msg) model
+          'S' -> update (Ping sleep_request_msg) model
           '¾' -> update RestartActiveSession model -- ¾ is .
+          'I' -> update InterruptActiveSession model
           _ -> (model ! [])
       in
         { new_model | focused = focused } ! [commands]
@@ -292,6 +311,9 @@ getSessionRestart model =
   in
     Http.send RestartActiveSessionResult request
 
+getSessionInterrupt : Model -> Cmd Msg
+getSessionInterrupt model =
+  Http.send InterruptActiveSessionResult (interrupt_session_request  model)
 
 
 restart_session_request model =
@@ -306,6 +328,18 @@ restart_session_request model =
     , timeout = Nothing
     }
 
+
+interrupt_session_request model =
+  Http.request
+    { method = "POST"
+    , headers = []
+    -- , headers = [xsrf_header] -- disable_check_xsrf=True and you don't need this.
+    , url = interrupt_session_url model
+    , body = Http.emptyBody
+    , withCredentials = True
+    , expect = Http.expectStringResponse (\_ -> Ok ())
+    , timeout = Nothing
+    }
 
 -- --NotebookApp.disable_check_xsrf=True eliminated the need for this
 xsrf_cookie = Http.header "Cookie" "_xsrf=2|30bc50cd|8c06faa1a9c8b6336386346ae8415c04|1505762830"
@@ -338,8 +372,16 @@ view model =
       ]
     ]
     [ viewStatus model
-    , div[] [toggleRenderedStatus model, kernelInfoButton, quickHTMLButton4, quickHTMLButton,
-    quickHTMLButton3, quickHTMLButton2, quickHTMLButton5]
+    , div []
+        [ toggleRenderedStatus model
+        , kernelInfoButton
+        , quickHTMLButton4
+        , quickHTMLButton
+        , quickHTMLButton3
+        , quickHTMLButton2
+        , quickHTMLButton6
+        , quickHTMLButton5
+        ]
     , div [style ["display" => "flex", "flex-direction" => "row"]]
           [ table [style []] (viewValidMessages model)
           , viewFocused model]
@@ -369,7 +411,12 @@ viewActiveSession : String -> Html Msg
 viewActiveSession statusText =
   span
     [style ["style" => "box"]]
-    [spacer, text statusText, spacer, button [onClick RestartActiveSession] [text "Restart"]]
+    [spacer
+    , text statusText
+    , spacer
+    , button [onClick RestartActiveSession] [text "Restart (.)"]
+    , button [onClick InterruptActiveSession] [text "(i)nterrupt"]
+    ]
 
 spacer : Html Msg
 spacer = span [style ["width" => "30px"]] []
@@ -465,6 +512,9 @@ quickHTMLButton3 =
 
 quickHTMLButton4 =
     button [onClick <| Ping basic_execute_request_msg] [text "basic execute (2+2)"]
+
+quickHTMLButton6 =
+    button [onClick <| Ping sleep_request_msg ] [text "(s)leep for 10 seconds"]
 
 quickHTMLButton5 =
   button
