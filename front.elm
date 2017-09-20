@@ -10,6 +10,7 @@ import Date
 import Json.Decode  exposing (decodeString)
 import Json.Encode  exposing (encode)
 import VirtualDom
+import Random
 
 import JMessages exposing (..)
 import JSessions exposing (..)
@@ -42,6 +43,10 @@ type alias Model =
   , sessions : RemoteData Http.Error (List Session)
   , activeSession : Maybe Session
   , status : String
+  , seed : Random.Seed
+  -- `seed` is used for msg_id generation of outgoing messages, which need to
+  -- be unique per Jupyter protocol specification. It is initialized from a
+  -- timestamp via the ConnectAPI message on page load.
   }
 
 
@@ -59,9 +64,11 @@ init = (
   --, sessions = Success sampleSessions
   , activeSession = Nothing
   , status = ""
+  , seed = Random.initialSeed 0
   }
-  --, Cmd.none)
-  , Task.perform identity (Task.succeed ConnectAPI))
+  -- , Cmd.none)
+
+  , Task.perform ConnectAPI now)
 
 
 
@@ -70,8 +77,7 @@ init = (
 type Msg
   = Input String
   | Send
-  | ConnectKernel
-  | ConnectAPI
+  | ConnectAPI Time.Time
   | Ping String
   | NewMessage String
   | NewTimeMessage Time String
@@ -112,6 +118,7 @@ interrupt_session_url : Model -> String
 interrupt_session_url model
   = String.join "http:" <| String.split "ws:" <| String.join "/interrupt" <| String.split "/channels" (ws_url model)
 
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -120,18 +127,15 @@ update msg model =
       | input = newInput
       } ! [ Cmd.none ]
 
-    ConnectKernel ->
-      { model
-      | input = ""
-      } ! [ WebSocket.send (ws_url model) kernel_info_request_msg ]
-
     Ping raw_msg ->
     let
       -- decoding from our sample raw messages doesn't work, let's fake it?
-      x =  Debug.log "oops..."  (raw_msg == basic_execute_request_msg)
       -- try to set the msg_id here, so it's unique...
 
-      outgoing = String.split "msg_id\": \"\"" raw_msg |> String.join "msg_id\": \"hi\""
+      (v, seed) = Random.step (Random.list 32 randomHex) model.seed
+      msg_id = String.fromList v
+      -- replaces msg_id's value of "" with "6f27aa890d69d98c93535db04bd04de9"
+      outgoing = String.split "msg_id\": \"" raw_msg |> String.join ("msg_id\": \"" ++ msg_id)
 
       new_msgs = case decodeString decodeJmsg outgoing of
         Ok m -> [m]
@@ -142,6 +146,7 @@ update msg model =
        { model
        | messages = model.messages ++ [outgoing]
        , msgs = model.msgs ++ new_msgs
+       , seed = seed
        } ! [ WebSocket.send (ws_url model) outgoing ]
 
     Send ->
@@ -200,8 +205,12 @@ update msg model =
     in
       new_model  ! [getSession new_model]
 
-    ConnectAPI ->
-      update (ChangeServer model.server) model
+    ConnectAPI x ->
+      let
+        timestamp = Time.inMilliseconds x |> round
+        seed = Random.initialSeed timestamp
+      in
+        update (ChangeServer model.server) {model | seed = seed, status=toString timestamp}
 
 
     NewSessions result ->
@@ -503,7 +512,7 @@ toggleRenderedStatus model =
 
 kernelInfoButton : Html Msg
 kernelInfoButton =
-    button [onClick ConnectKernel] [text "kernel info"]
+    button [onClick <| Ping kernel_info_request_msg] [text "kernel info"]
 
 quickHTMLButton =
     button [onClick <| Ping error_execute_request_msg] [text "get an error"]
@@ -628,3 +637,10 @@ sessionsToOptions model =
     _ -> []
 
 
+{-| Generate a random hex character (one of '0'-'9' and 'a'-'f') -}
+randomHex : Random.Generator Char
+randomHex = Random.map
+  (\x -> case x < 10 of
+    True -> Char.fromCode(x + 48)   -- 48 is '0'
+    False -> Char.fromCode(x + 87)) -- 97 is 'a'
+  (Random.int 0 15) -- Generator values are inclusive [0,1,...14,15]

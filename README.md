@@ -127,6 +127,8 @@ popular front is being served from).
 - [x] fix off by one error in msg + rawMsg stuff.
 - [ ] use oneOf decoders for splitting message types
 - [ ] proper pre-flight xsrf token request handling
+- [ ] random seed input box (for reproducible testing)
+- [ ] Ctrl-C should send interrupt, not clear
 
 
 ### upstream cleanup
