@@ -132,10 +132,9 @@ update msg model =
       -- decoding from our sample raw messages doesn't work, let's fake it?
       -- try to set the msg_id here, so it's unique...
 
-      (v, seed) = Random.step (Random.list 32 randomHex) model.seed
-      msg_id = String.fromList v
+      (msg_id, seed) = Random.step msg_id_generator model.seed
       -- replaces msg_id's value of "" with "6f27aa890d69d98c93535db04bd04de9"
-      outgoing = String.split "msg_id\": \"" raw_msg |> String.join ("msg_id\": \"" ++ msg_id)
+      outgoing = replace "msg_id\": \"" raw_msg ("msg_id\": \"" ++ msg_id)
 
       new_msgs = case decodeString decodeJmsg outgoing of
         Ok m -> [m]
@@ -637,10 +636,27 @@ sessionsToOptions model =
     _ -> []
 
 
-{-| Generate a random hex character (one of '0'-'9' and 'a'-'f') -}
+{-| Generate a random hex character (one of '0'-'9' and 'a'-'f')
+-}
 randomHex : Random.Generator Char
 randomHex = Random.map
   (\x -> case x < 10 of
     True -> Char.fromCode(x + 48)   -- 48 is '0'
     False -> Char.fromCode(x + 87)) -- 97 is 'a'
   (Random.int 0 15) -- Generator values are inclusive [0,1,...14,15]
+
+
+{-| Generate a 32 hex character string
+
+The classic Jupyter Notebook javascript generates a UUID version 4 string here,
+but the protocol does not require this, so we just do a best effort to immitate
+the notebook behavior.
+-}
+msg_id_generator : Random.Generator String
+msg_id_generator = Random.list 32 randomHex |> Random.map (\x -> String.fromList x)
+
+
+{- Replace `x` in `y` with `z`
+-}
+replace: String -> String -> String -> String
+replace x y z = String.split x y |> String.join z
