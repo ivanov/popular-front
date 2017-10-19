@@ -171,11 +171,27 @@ update msg model =
                 --  if raw_msg == basic_execute_request_msg then
                 --    [basic_execute_request_msg_] else []
             in
-            { model
-                | msgs = model.msgs ++ new_msgs
-                , seed = seed
-            }
-                ! [ WebSocket.send (ws_url model) outgoing ]
+
+
+
+            RemoteData.withDefault  (model ! [])
+            (RemoteData.map (\s ->
+                 { model
+                     | msgs = model.msgs ++ new_msgs
+                     , seed = seed
+                 }
+                     ! [ WebSocket.send (ws_url model) outgoing ]) model.sessions)
+
+
+
+            --  case model.session of
+            --   Success _ =>
+            --      { model
+            --          | msgs = model.msgs ++ new_msgs
+            --          , seed = seed
+            --      }
+            --          ! [ WebSocket.send (ws_url model) outgoing ]
+            --   _ => model ! []
 
         Send ->
             { model
