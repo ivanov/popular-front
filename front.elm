@@ -131,6 +131,7 @@ ws_url model =
                 ++ "/api/kernels/"
                 ++ s.kernel.id
                 ++ "/channels"
+                ++ "?token=720230a0a6f60646c17c51f673405e86a9cbedab08eba10d"
 
 
 restart_session_url : Model -> String
@@ -433,7 +434,7 @@ api_url model =
     -- TODO: this is brittle - we should check if there's already a leading http://
     -- in the url and not add it to the front in that case
     -- TODO: support tokens and password
-    "http://" ++ model.server ++ "/api/sessions"
+    "http://" ++ model.server ++ "/api/sessions" ++ "?token=720230a0a6f60646c17c51f673405e86a9cbedab08eba10d"
 
 
 getSession : Model -> Cmd Msg
