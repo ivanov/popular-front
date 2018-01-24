@@ -44,6 +44,12 @@ jupyter notebook --NotebookApp.allow_origin="http://localhost:8000" --NotebookAp
 
 ## Common Failure modes
 Message in browser javascript console when we can't connect:
+
+```
+Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8888/api/sessions?token=720230a0a6f60646c17c51f673405e86a9cbedab08eba10d. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
+```
+or
+
 ```
 GET http://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels [HTTP/1.1 403 Forbidden 6ms]
 Firefox can’t establish a connection to the server at ws://localhost:8888/api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels.
@@ -51,8 +57,13 @@ Firefox can’t establish a connection to the server at ws://localhost:8888/api/
 
 In the notebook server log:
 ```
-[W 12:16:22.889 NotebookApp] No session ID specified
-[I 12:16:22.890 NotebookApp] Adapting to protocol v5.1 for kernel 31004fe1-31cb-4529-9ff2-214c4abfc5fa
+[W 10:14:08.137 NotebookApp] Blocking Cross Origin API request for
+/api/sessions.  Origin: http://localhost:8000, Host: localhost:8888]
+```
+
+or 
+
+```
 [W 12:16:22.890 NotebookApp] Blocking Cross Origin WebSocket Attempt.  Origin: http://localhost:8000, Host: localhost:8888
 [W 12:16:22.891 NotebookApp] 403 GET /api/kernels/31004fe1-31cb-4529-9ff2-214c4abfc5fa/channels (::1) 4.60ms referer=None
 ```
@@ -125,10 +136,19 @@ popular front is being served from).
 - [x] rendering mime bundles on the page
       - using innerHtml property in virtualdom?
 - [x] fix off by one error in msg + rawMsg stuff.
-- [ ] use oneOf decoders for splitting message types
+- [p] use oneOf decoders for splitting message types
 - [ ] proper pre-flight xsrf token request handling
 - [ ] random seed input box (for reproducible testing)
 - [ ] Ctrl-C should send interrupt, not clear
+- [ ] send message when the cross origin stuff is not set up
+- [ ] and when the token is wrong (403)
+- [ ] support comm messages
+- [ ] message order editor (vi keys)
+      - delete with 'd' or 'x'
+      - paste with 'p'
+      - copy with 'y'
+      - undo with 'u' (ideally would be multi-level)
+- [ ] scrolling for messages inside container
 
 
 ### upstream cleanup

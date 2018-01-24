@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+
 import BakedMessages exposing (..)
 import Char exposing (fromCode, toCode)
 import Date
@@ -111,18 +112,16 @@ type Msg
 newMessage str =
     GetTimeAndThen (\time -> NewTimeMessage time str)
 
-
-ws_url : Model -> String
-
-
+token : String
+token = "038eaee1ae5b0b07d503ec1490f2e01945f686b5c8181557"
 
 --ws_url = "ws://localhost:8888/api/kernels/d341ae22-0258-482b-831a-fa0a0370ffba"
-
-
+ws_url : Model -> String
 ws_url model =
     case model.activeSession of
         Nothing ->
             Debug.log "~~~ uhoh" "http://shouldnothappen"
+            -- send message - could not connect to the session msg - perhaps CORS not set up, or the token is missing
 
         Just s ->
             Debug.log "sending ws to..."
@@ -131,7 +130,7 @@ ws_url model =
                 ++ "/api/kernels/"
                 ++ s.kernel.id
                 ++ "/channels"
-                ++ "?token=720230a0a6f60646c17c51f673405e86a9cbedab08eba10d"
+                ++ "?token=" ++ token
 
 
 restart_session_url : Model -> String
@@ -289,12 +288,14 @@ update msg model =
         NewSessions result ->
             let
                 new_sessions =
+                    -- this result case switch should probably be higher here
                     case result of
                         Ok sessions ->
                             Success (Debug.log "New sessions result: " sessions)
 
                         Err x ->
                             Debug.log "failure" Failure x
+                            -- send message - could not connect to the session msg - perhaps CORS not set up, or the token is missing
             in
             { model
                 | sessions = new_sessions
@@ -434,7 +435,7 @@ api_url model =
     -- TODO: this is brittle - we should check if there's already a leading http://
     -- in the url and not add it to the front in that case
     -- TODO: support tokens and password
-    "http://" ++ model.server ++ "/api/sessions" ++ "?token=720230a0a6f60646c17c51f673405e86a9cbedab08eba10d"
+    "http://" ++ model.server ++ "/api/sessions" ++ "?token=" ++ token
 
 
 getSession : Model -> Cmd Msg
