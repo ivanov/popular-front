@@ -1,6 +1,8 @@
 module JMessages
     exposing
-        ( Jmsg
+        ( Jmsg (..)
+        , Jmsg_
+        --, UnknownMessage
         , JmsgContent
         , JmsgContentData
           --, JmsgContentMetadata
@@ -21,7 +23,9 @@ import Json.Encode
 -- output done via http://eeue56.github.io/json-to-elm/
 
 
-type alias Jmsg =
+--type alias UnknownMessage = String
+
+type alias Jmsg_ =
     { parent_header : JmsgParent_header
 
     --, msg_type : String
@@ -33,6 +37,11 @@ type alias Jmsg =
     --, buffers : List ComplexType
     , metadata : JmsgMetadata
     }
+
+
+type Jmsg
+  = Known Jmsg_
+  | UnknownMessage
 
 
 type alias JmsgParent_header =
@@ -78,9 +87,9 @@ type alias JmsgMetadata =
     {}
 
 
-decodeJmsg : Json.Decode.Decoder Jmsg
-decodeJmsg =
-    Json.Decode.Pipeline.decode Jmsg
+decodeJmsg_ : Json.Decode.Decoder Jmsg_
+decodeJmsg_ =
+    Json.Decode.Pipeline.decode Jmsg_
         |> required "parent_header" decodeJmsgParent_header
         -- |> required "msg_type" (Json.Decode.string)
         -- |> required "msg_id" (Json.Decode.string)
@@ -90,6 +99,12 @@ decodeJmsg =
         -- |> required "buffers" (Json.Decode.list decodeComplexType)
         |> optional "metadata" decodeJmsgMetadata {}
 
+decodeUnknownJmsg : Json.Decode.Decoder Jmsg
+decodeUnknownJmsg = Json.Decode.Pipeline.decode UnknownMessage
+
+decodeJmsg : Json.Decode.Decoder Jmsg
+decodeJmsg =
+   oneOf [ map Known decodeJmsg_, decodeUnknownJmsg ]
 
 decodeJmsgParent_header : Json.Decode.Decoder JmsgParent_header
 decodeJmsgParent_header =
@@ -136,9 +151,13 @@ decodeJmsgMetadata =
 
 --|> required "" (decode_Unknown)
 
-
 encodeJmsg : Jmsg -> Json.Encode.Value
-encodeJmsg record =
+encodeJmsg record = case record of
+  Known msg -> encodeJmsg_ msg
+  UnknownMessage -> Json.Encode.string "unknown_message"
+
+encodeJmsg_ : Jmsg_ -> Json.Encode.Value
+encodeJmsg_ record =
     Json.Encode.object
         [ ( "parent_header", encodeJmsgParent_header <| record.parent_header )
 
@@ -188,9 +207,9 @@ encodeJmsgMetadata record =
         []
 
 
-brokenJmsg : String -> Jmsg
+brokenJmsg : String -> Jmsg_
 brokenJmsg s =
-    Jmsg
+    Jmsg_
         { date = "broken", msg_id = "broken", msg_type = "hi" }
         -- parentHeader
         { execution_state = Just s, data = Nothing }

@@ -170,7 +170,7 @@ update msg model =
                             [ ( outgoing, m ) ]
 
                         Err x ->
-                            Debug.log ("oops..." ++ toString outgoing) [ ( outgoing, brokenJmsg outgoing ) ]
+                            Debug.log ("oops..." ++ toString outgoing ++ x) [ ( outgoing, UnknownMessage ) ]
 
                 --  if raw_msg == basic_execute_request_msg then
                 --    [basic_execute_request_msg_] else []
@@ -607,19 +607,29 @@ viewStatusText model =
     span [ style [ "background-color" => "white", "flex" => "2" ] ] [ text model.status ]
 
 
-viewMessage : Model -> Int -> Jmsg -> Html Msg
-viewMessage model i msg =
-    let
-        s =
-            case model.focused of
-                Just j ->
-                    if i == j then
-                        [ "background-color" => msg2color model msg ]
-                    else
-                        [ "background-color" => msg2colorMuted model msg ]
 
-                Nothing ->
-                    [ "background-color" => msg2color model msg]
+-- TODO: take out
+viewMessage : Model -> Int -> Jmsg -> Html Msg
+viewMessage model i msg = case msg of
+  Known msg -> viewMessage_ model i msg
+  UnknownMessage -> let s = []
+    in
+      tr [ style s, onClick (Focus i) ]
+          -- TODO : clean up this stling, unify with 'with_date` below
+              [ td [ style [ "height" => "24px", "width" => "24px" ]] [text "Unknown"] ]
+
+viewMessage_ : Model -> Int -> Jmsg_ -> Html Msg
+viewMessage_ model i msg =
+    let
+        s = case model.focused of
+          Just j ->
+              if i == j then
+                  [ "background-color" => msg2color model msg ]
+              else
+                  [ "background-color" => msg2colorMuted model msg ]
+
+          Nothing ->
+              [ "background-color" => msg2color model msg]
 
         subj =
             text <| getSubject msg
@@ -660,7 +670,7 @@ color2text color
 
 {- TODO: turn this into a case switch once we properly differentiate the different kinds of Jmsgs
 -}
-msg2color : model -> Jmsg -> String
+msg2color : model -> Jmsg_ -> String
 msg2color m j =
   let color =
     if j.header.msg_type == "execute_request" then
@@ -680,7 +690,7 @@ msg2color m j =
   in
     color2text color
 
-msg2colorMuted : model -> Jmsg -> String
+msg2colorMuted : model -> Jmsg_ -> String
 msg2colorMuted m j = let
     c = msg2color m j
     with_a = replace "rgb" c "rgba"
@@ -817,7 +827,7 @@ viewFocused model =
             div [] []
 
 
-getSubject : Jmsg -> String
+getSubject : Jmsg_ -> String
 getSubject msg =
     let
         state =
@@ -826,7 +836,7 @@ getSubject msg =
     "(" ++ msg.channel ++ ") " ++ msg.header.msg_type ++ state
 
 
-msgFromPart : Jmsg -> String
+msgFromPart : Jmsg_ -> String
 msgFromPart msg =
     -- all "iopub" message come form the kernel"
     if msg.channel == "iopub" then
@@ -841,16 +851,20 @@ msgFromPart msg =
         "Client"
 
 
-msgToPart : Jmsg -> String
+msgToPart : Jmsg_ -> String
 msgToPart msg =
     if msg.channel == "shell" then
         "only us (direct)"
     else
         msg.channel ++ " listeners"
 
-
 renderMsg : Model -> Jmsg -> String -> List (Html Msg)
-renderMsg model msg raw =
+renderMsg model msg raw = case msg of
+  UnknownMessage -> [table [] [], hr [] [], text raw]
+  Known msg -> renderMsg_ model msg raw
+
+renderMsg_: Model -> Jmsg_ -> String -> List (Html Msg)
+renderMsg_ model msg raw =
     [ table []
         [ tr [] [ td [] [ text "Channel:" ], td [] [ text msg.channel ] ]
         , tr [] [ td [] [ text "From:" ], td [] [ text (msgFromPart msg) ] ]
@@ -870,8 +884,9 @@ renderMsg model msg raw =
     -- , text <| "***" ++  msg.header.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| toString msg
     ]
 
+-- renderMimeBundles : Jmsg_ -> Html Msg
 
-renderMimeBundles : Jmsg -> Html Msg
+renderMimeBundles : Jmsg_ -> Html Msg
 renderMimeBundles msg =
     case msg.content.data of
         Nothing ->
