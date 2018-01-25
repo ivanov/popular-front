@@ -364,6 +364,9 @@ update msg model =
 
                         'R' ->
                             update (Ping resource_info_request_msg) model
+                        
+                        'T' ->
+                            update ToggleRendered model
 
                         'S' ->
                             update (Ping sleep_request_msg) model
@@ -549,19 +552,20 @@ view model =
             , quickHTMLButton6
             , quickHTMLButton5
             ]
-        , div [ style [ "display" => "flex", "flex-direction" => "row" ] ]
-            [ table [ style [] ] (viewValidMessages model)
+        , div [ style [ "display" => "flex", "flex-direction" => "row", "max-height" => "87vh"] ]
+            [  div [style ["overflow" => "auto"]] [table [ style [] ] (viewValidMessages model)]
             , viewFocused model
             ]
-        , input [ onInput Input ] []
-        , button [ onClick Send ] [ text "Send" ]
-        , button [ onClick <| newMessage "--- mark --- " ] [ text "add marker" ]
+        -- , input [ onInput Input ] []
+        -- , button [ onClick Send ] [ text "Send" ]
+
+        -- , button [ onClick <| newMessage "--- mark --- " ] [ text "add marker" ]
         , button [ onClick ClearAllMessages ] [ text "(C)lear all messages" ]
 
-        --<| "--- mark --- " ++ (toString <| Task.perform <| \a ->  Time.now )] [text "Add Marker"]
+        --<| "--- mark --- " ++ [(toString <| Task.perform <| \a ->  Time.now )] [text "Add Marker"]
         , div [ style [ "flex" => "1" ] ] []
-        , viewTimeSlider model
-        , viewTimeSlider model
+        -- , viewTimeSlider model
+        -- , viewTimeSlider model
         , viewTimeSlider model
         ]
 
@@ -821,7 +825,7 @@ viewFocused model =
                 -- Just msg
                 Just ( raw, msg ) ->
                     -- TODO: put flexbox styling here
-                    div [ style [ "border" => "2px solid", "padding" => "5px", "flex" => "1" ] ] (renderMsg model msg raw)
+                    div [ style [ "border" => "2px solid", "padding" => "5px", "flex" => "1", "overflow" => "auto"] ] (renderMsg model msg raw)
 
         -- , text raw ]
         Nothing ->

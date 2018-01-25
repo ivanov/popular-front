@@ -149,6 +149,14 @@ popular front is being served from).
       - copy with 'y'
       - undo with 'u' (ideally would be multi-level)
 - [ ] scrolling for messages inside container
+- [ ] Cross-Origin Request Blocked: The Same Origin Policy disallows reading the
+      remote resource at
+      http://localhost:8888/api/kernels/e...49/interrupt?token=0...
+      (Reason: expected ‘true’ in CORS header ‘Access-Control-Allow-Credentials’).)
+- [ ] change scroll position to make element visible
+- [ ] message filtering... based on regexp?
+- [ ] first message Unkown in "get fancy result"
+- [ ] set up a "focused" slider for changing focus of current message
 
 
 ### upstream cleanup
