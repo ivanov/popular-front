@@ -283,7 +283,7 @@ update msg model =
                 seed =
                     Random.initialSeed timestamp
             in
-            update (ChangeServer model.server) { model | seed = seed, status = toString timestamp }
+            update (ChangeServer model.server) { model | seed = seed, status = ""} -- toString timestamp }
 
         NewSessions result ->
             let
@@ -639,24 +639,25 @@ viewMessage_ model i msg =
         subj =
             text <| getSubject msg
 
-        content =
+        (content, ii) =
             case model.focused of
                 Just j ->
                     if i == j then
-                        [ strong [] [ subj ] ]
+                        ([ strong [] [ subj ] ], strong [] [text <| toString i])
                     else
-                        [ subj ]
+                        ([ subj ], text <| toString i)
 
                 Nothing ->
-                    [ subj ]
+                    ([ subj ], text <| toString i)
 
         with_date =
             [ td [ style [ "height" => "24px", "width" => "24px" ] ]
-                [ em []
-                    [ --text <| "10:50" -- ++ (toString <| Date.fromString msg.header.date)
-                      text <| toString i --"10:50" -- ++ (toString <| Date.fromString msg.header.date)
-                    ]
-                ]
+                 [ em []
+                     [ --text <| "10:50" -- ++ (toString <| Date.fromString msg.header.date)
+                       --text <| toString i --"10:50" -- ++ (toString <| Date.fromString msg.header.date)
+                       ii --"10:50" -- ++ (toString <| Date.fromString msg.header.date)
+                     ]
+                 ]
             , td [] content
             ]
     in
