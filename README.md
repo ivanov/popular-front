@@ -154,9 +154,12 @@ popular front is being served from).
       http://localhost:8888/api/kernels/e...49/interrupt?token=0...
       (Reason: expected ‘true’ in CORS header ‘Access-Control-Allow-Credentials’).)
 - [ ] change scroll position to make element visible
+    - DOM.Scroll.toTop()
 - [ ] message filtering... based on regexp?
 - [ ] first message Unkown in "get fancy result"
 - [ ] set up a "focused" slider for changing focus of current message
+- [ ] export messages to json
+- [ ] import json message streams (for replay)
 
 
 ### upstream cleanup
