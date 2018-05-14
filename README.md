@@ -2,6 +2,13 @@
 
 Prototyping UI and UX ideas for Jupyter notebooks (in Elm).
 
+
+- Whatever happened to the Popular Front?
+- He's over there
+- (in unison) SPLITTER!
+
+([whatch the full sketch from Life of Brian here](https://www.youtube.com/watch?v=WboggjN_G-4))
+
 ## Installation (user)
 
 (TODO: this isn't a supported  option at the moment)
