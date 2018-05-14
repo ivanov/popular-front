@@ -7,7 +7,7 @@ Prototyping UI and UX ideas for Jupyter notebooks (in Elm).
 - He's over there
 - (in unison) SPLITTER!
 
-([whatch the full sketch from Life of Brian here](https://www.youtube.com/watch?v=WboggjN_G-4))
+([watch the full sketch from Life of Brian here](https://www.youtube.com/watch?v=WboggjN_G-4))
 
 ## Installation (user)
 
@@ -124,12 +124,12 @@ popular front is being served from).
 - [ ] better formatting for UI messages (pretty)
 
 - [x] save outgoing messages... inside our list, probably...
-  -- or in a seperate ("outgoing" queue) - so we don't have to encode them...
+  -- or in a separate ("outgoing" queue) - so we don't have to encode them...
 
 - [ ] make a port for JSON.stringify and call it will null, 2...
     - nope, this will have to wait for later, elm-reactor doesn't support ports
 
-- [ ] after talk: clean up dependency on indexes for active message. too britle.
+- [ ] after talk: clean up dependency on indexes for active message. too brittle.
 - [ ] make the outgoing execute request valid, so it parses back into a Jmsg
 - [ ] clearing messages should reset focus to Nothing
 - [ ] <- and -> arrows for incoming  and outgoing messages
