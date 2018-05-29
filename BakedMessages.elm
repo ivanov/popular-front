@@ -15,7 +15,7 @@ kernel_info_request_msg = """
 {
   "header": {
     "msg_type": "kernel_info_request",
-    "username": "yo",
+    "username": "Popular Front",
     "session": "sessionyo",
     "date": "sup",
     "msg_id": ""
@@ -32,6 +32,9 @@ error_execute_request_msg = """
 {
   "header": {
     "msg_type": "execute_request",
+    "username": "Popular Front",
+    "date": "k",
+    "session": "37F4106072824F45A3D2CF209C44C479",
     "msg_id": ""
   },
   "parent_header": {},
@@ -51,6 +54,9 @@ fancy_execute_request_msg = """
 {
   "header": {
     "msg_type": "execute_request",
+    "username": "Popular Front",
+    "date": "k",
+    "session": "37F4106072824F45A3D2CF209C44C479",
     "msg_id": ""
   },
   "parent_header": {},
@@ -70,7 +76,7 @@ stdout_execute_request_msg = """
 {
   "header": {
     "msg_type": "execute_request",
-    "username": "yo",
+    "username": "Popular Front",
     "session": "sessionyo",
     "date": "",
     "msg_id": ""
@@ -94,7 +100,7 @@ basic_execute_request_msg = """
 {
   "header": {
     "msg_id": "",
-    "username": "username",
+    "username": "Popular Front",
     "session": "37F4106072824F45A3D2CF209C44C479",
     "msg_type": "execute_request",
     "version": "5.0"
@@ -122,7 +128,7 @@ resource_info_request_msg = """
 {
   "header": {
     "msg_id": "",
-    "username": "something",
+    "username": "Popular Front",
     "session": "47F4106072824F45A3D2CF209C44C479",
     "msg_type": "resource_info_request",
     "version": "5.0"
@@ -152,7 +158,7 @@ resource_info_request_msg = """
 --    "buffers": [],
 --    {
 --      "msg_id": "",
---      "username": "username",
+--      "username": "Popular Front",
 --      "session": "37F4106072824F45A3D2CF209C44C479",
 --      "msg_type": "execute_request",
 --      "version": "5.0"

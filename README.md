@@ -175,22 +175,11 @@ popular front is being served from).
 - [ ] serve popular front as a jupyter serverextension
 - [ ] 'e' to edit portions of a message
 - [ ] export messages to JSON / Python formats (for replay or mock testing)
+- [ ] compose an outgoing queue of messages (order, timing optionally specified)
+- [ ] in-reply-to message highlighting / threading
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...
 - [ ] ANSI escape codes in execute_reply when there are error messages
 
 
-
-
-### miscellaneous notes
--- sample message
-```
-{"header":{"msg_id":"9616C6F009194735873B804684D3EDD2","username":"username","session":"CC87D0D1ED2B455E8083A8AF90A7400A","msg_type":"kernel_info_request","version":"5.0"},"metadata":{},"content":{},"buffers":[],"parent_header":{},"channel":"shell"}
-```
-
-
-messages to render - show off
-execution
-stream (stdout) (content name)
-result

@@ -662,7 +662,7 @@ viewMessage model i msg = case msg of
     in
       tr [ style s, onClick (Focus i) ]
           -- TODO : clean up this stling, unify with 'with_date` below
-              [ td [ style [ "height" => "24px", "width" => "24px" ]] [text "Unknown"] ]
+              [ td [] [], td [ style [ "height" => "24px", "width" => "24px" ]] [text "Unknown"] ]
 
 viewMessage_ : Model -> Int -> Jmsg_ -> Html Msg
 viewMessage_ model i msg =
@@ -966,19 +966,22 @@ msgFromPart msg =
     if msg.channel == "iopub" then
         --  msg_type ==  "status" then
         if msg.header.msg_type == "execute_input" then
-            "Client (via Kernel)"
+            "Client: " ++ msg.header.username ++ " (via Kernel)"
         else
             "Kernel"
     else if String.endsWith "reply" msg.header.msg_type then
         "Kernel"
     else
-        "Client"
+        "Client: " ++ msg.header.username
 
 
 msgToPart : Jmsg_ -> String
 msgToPart msg =
     if msg.channel == "shell" then
-        "only us (direct)"
+        if msg.header.msg_type == "execute_request" then
+          "The kernel"
+        else
+          "only us (direct)"
     else
         msg.channel ++ " listeners"
 
