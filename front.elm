@@ -49,6 +49,7 @@ type alias Model =
     , connectionString : String
     , raw : RawOrRendered
     , focused : Maybe Int
+    , undo : List (Int, (String, Jmsg))
     , server : String
     , sessions : RemoteData Http.Error (List Session)
     , activeSession : Maybe Session
@@ -69,6 +70,7 @@ init =
       , connectionString = ""
       , raw = Rendered
       , focused = Nothing
+      , undo = []
       , server = "localhost:8888"
       , sessions = NotAsked
 
@@ -105,6 +107,7 @@ type Msg
     | InterruptActiveSession
     | InterruptActiveSessionResult (Result Http.Error ())
     | DeleteFocusedMessage
+    | PopUndoStack
     | ClearAllMessages
     | KeyMsgDown Keyboard.KeyCode
     | Status String
@@ -336,6 +339,9 @@ update msg model =
         DeleteFocusedMessage ->
             dropFocused model ! [ Cmd.none ]
 
+        PopUndoStack ->
+            popUndoStack model ! [ Cmd.none ]
+
         KeyMsgDown code ->
             let
                 focused =
@@ -385,6 +391,8 @@ update msg model =
                         'D' ->
                             update DeleteFocusedMessage model
 
+                        'U' ->
+                            update PopUndoStack model
 
                         _ ->
                             model ! []
@@ -754,8 +762,23 @@ dropFocused m  =
           List.drop 1 m.msgs
         else
           List.take i m.msgs ++ List.drop (i+1) m.msgs
+    undo = case m.focused of
+      Nothing -> m.undo
+      Just i ->
+        let
+          focusedMsg = if i == 0 then
+            List.head m.msgs
+          else
+            List.head (List.drop i m.msgs)
+        in
+          case focusedMsg of
+            Nothing -> m.undo
+            Just msg -> (i, msg) :: m.undo
   in
-    {m | msgs = msgs, focused = inRange (List.length msgs) m.focused}
+    {m | msgs = msgs
+       , focused = inRange (List.length msgs) m.focused
+       , undo = undo
+     }
 
 inRange : Int -> Maybe Int -> Maybe Int
 inRange max cur = if max == 0 then Nothing
@@ -767,6 +790,16 @@ inRange max cur = if max == 0 then Nothing
       else
         Just (max-1)
 
+popUndoStack : Model -> Model
+popUndoStack m =
+  let (msgs, undo) =
+    case m.undo of
+      (i, msg) :: xs ->
+        if i == 0 then (msg :: m.msgs, xs)
+        else ((List.take i m.msgs) ++ msg :: List.drop i m.msgs, xs)
+      _ -> (m.msgs, m.undo)
+  in
+  { m | undo = undo, msgs = msgs }
 
 viewTimeSlider : Model -> Html Msg
 viewTimeSlider model =
