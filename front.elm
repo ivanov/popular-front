@@ -74,7 +74,7 @@ init =
       , msgs = []
       , index = Nothing
       , connectionString = ""
-      , raw = Rendered
+      , raw = Raw
       , focused = Nothing
       , bufferedMsg = Nothing
       , undo = []
@@ -751,31 +751,13 @@ viewRawMessage i msg =
 
 viewValidMessages : Model -> List (Html Msg)
 viewValidMessages model =
-    case model.raw of
-        Raw ->
-            let
-                msgs =
-                    case model.index of
-                        Nothing ->
-                            List.map Tuple.first model.msgs
-
-                        Just i ->
-                            List.take i model.msgs
-                                |> List.map Tuple.first
-            in
-            List.indexedMap viewRawMessage msgs
-
-        Rendered ->
-            let
-                msgs =
-                    case model.index of
-                        Nothing ->
-                            model.msgs
-
-                        Just i ->
-                            List.take i model.msgs
-            in
-            List.indexedMap (\index ( string, message ) -> viewMessage model index message) msgs
+  let
+    msgs = case model.index of
+        Nothing -> model.msgs
+        Just i -> List.take i model.msgs
+  in
+    List.indexedMap (\index ( string, message ) ->
+      viewMessage model index message) msgs
 
 dropFocused : Model -> Model
 dropFocused m  =
@@ -978,7 +960,7 @@ msgFromPart msg =
 msgToPart : Jmsg_ -> String
 msgToPart msg =
     if msg.channel == "shell" then
-        if msg.header.msg_type == "execute_request" then
+        if String.endsWith "_request" msg.header.msg_type then
           "The kernel"
         else
           "only us (direct)"
@@ -1006,7 +988,10 @@ renderMsg_ model msg raw =
     --, pre [] [text <| encode 2 (encodeJmsg msg)]
     -- , text <| encode 2 raw
     , renderMimeBundles msg
-    , text raw
+    , hr [] []
+    , case model.raw of
+        Raw -> text raw
+        Rendered -> text ""
 
     -- , text <| "***" ++  msg.header.msg_type ++ ": " ++ (Maybe.withDefault " (1 no exec state)" msg.content.execution_state) , text <| toString msg
     ]

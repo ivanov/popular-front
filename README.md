@@ -177,6 +177,7 @@ popular front is being served from).
 - [ ] export messages to JSON / Python formats (for replay or mock testing)
 - [ ] compose an outgoing queue of messages (order, timing optionally specified)
 - [ ] in-reply-to message highlighting / threading
+- [ ] up and down should only go through visible messages
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...

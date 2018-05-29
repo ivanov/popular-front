@@ -110,7 +110,8 @@ decodeJmsgParent_header : Json.Decode.Decoder JmsgParent_header
 decodeJmsgParent_header =
     Json.Decode.Pipeline.decode JmsgParent_header
         |> optional "date" Json.Decode.string "SOMETIME"
-        |> optional "msg_id" Json.Decode.string "blank_msg_id"
+        --|> optional "msg_id" Json.Decode.string "<blank_msg_id>"
+        |> optional "msg_id" Json.Decode.string ""
         --|> required "version" (Json.Decode.string)
         |> optional "msg_type" Json.Decode.string "some_msg_type"
 
