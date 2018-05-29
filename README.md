@@ -152,13 +152,13 @@ popular front is being served from).
 - [ ] send message when the cross origin stuff is not set up
 - [ ] and when the token is wrong (403)
 - [ ] support comm messages
-- [ ] message order editor (vi keys)
+- [x] message order editor (vi keys)
       x delete with 'd' or 'x'
       x paste with 'p'
       x copy with 'y'
       x undo with 'u' (ideally would be multi-level)
-      - undo a clearallmessages action
-      - undo a paste
+      x undo a clearallmessages action
+      x undo a paste
 - [ ] scrolling for messages inside container
 - [ ] Cross-Origin Request Blocked: The Same Origin Policy disallows reading the
       remote resource at
@@ -174,6 +174,7 @@ popular front is being served from).
 - [ ] start a new session from PF UI
 - [ ] serve popular front as a jupyter serverextension
 - [ ] 'e' to edit portions of a message
+- [ ] export messages to JSON / Python formats (for replay or mock testing)
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...

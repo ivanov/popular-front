@@ -830,9 +830,13 @@ pasteBuffered m =
     Just msg ->
       case m.focused of
         Nothing ->
-          {m | msgs = msg :: m.msgs }
+          { m | msgs = msg :: m.msgs
+              , undo = Inserted 0 :: m.undo
+          }
         Just i ->
-          {m | msgs = (List.take (i+1) m.msgs) ++ msg :: (List.drop (i+1) m.msgs) }
+          { m | msgs = (List.take (i+1) m.msgs) ++ msg :: (List.drop (i+1) m.msgs)
+              , undo = Inserted (i+1) :: m.undo
+          }
 
 popUndoStack : Model -> Model
 popUndoStack m =
