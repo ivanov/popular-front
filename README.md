@@ -154,9 +154,11 @@ popular front is being served from).
 - [ ] support comm messages
 - [ ] message order editor (vi keys)
       x delete with 'd' or 'x'
-      - paste with 'p'
-      - copy with 'y'
-      - undo with 'u' (ideally would be multi-level)
+      x paste with 'p'
+      x copy with 'y'
+      x undo with 'u' (ideally would be multi-level)
+      - undo a clearallmessages action
+      - undo a paste
 - [ ] scrolling for messages inside container
 - [ ] Cross-Origin Request Blocked: The Same Origin Policy disallows reading the
       remote resource at
@@ -171,6 +173,7 @@ popular front is being served from).
 - [ ] import json message streams (for replay)
 - [ ] start a new session from PF UI
 - [ ] serve popular front as a jupyter serverextension
+- [ ] 'e' to edit portions of a message
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...

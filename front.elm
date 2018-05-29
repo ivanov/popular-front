@@ -49,6 +49,7 @@ type alias Model =
     , connectionString : String
     , raw : RawOrRendered
     , focused : Maybe Int
+    , bufferedMsg : Maybe (String, Jmsg)
     , undo : List (Int, (String, Jmsg))
     , server : String
     , sessions : RemoteData Http.Error (List Session)
@@ -70,6 +71,7 @@ init =
       , connectionString = ""
       , raw = Rendered
       , focused = Nothing
+      , bufferedMsg = Nothing
       , undo = []
       , server = "localhost:8888"
       , sessions = NotAsked
@@ -108,6 +110,8 @@ type Msg
     | InterruptActiveSessionResult (Result Http.Error ())
     | DeleteFocusedMessage
     | PopUndoStack
+    | YankFocusedMessage
+    | PasteBufferedMessage
     | ClearAllMessages
     | KeyMsgDown Keyboard.KeyCode
     | Status String
@@ -342,6 +346,12 @@ update msg model =
         PopUndoStack ->
             popUndoStack model ! [ Cmd.none ]
 
+        YankFocusedMessage ->
+            yankFocused model ! [ Cmd.none ]
+
+        PasteBufferedMessage ->
+            pasteBuffered model ! [ Cmd.none ]
+
         KeyMsgDown code ->
             let
                 focused =
@@ -393,6 +403,12 @@ update msg model =
 
                         'U' ->
                             update PopUndoStack model
+
+                        'Y' ->
+                            update YankFocusedMessage model
+
+                        'P' ->
+                            update PasteBufferedMessage model
 
                         _ ->
                             model ! []
@@ -789,6 +805,23 @@ inRange max cur = if max == 0 then Nothing
         Just i
       else
         Just (max-1)
+
+yankFocused : Model -> Model
+yankFocused m =
+  case m.focused of
+    Nothing -> m
+    Just i -> {m | bufferedMsg = List.head <| List.drop i m.msgs }
+
+pasteBuffered : Model -> Model
+pasteBuffered m =
+  case m.bufferedMsg of
+    Nothing -> m
+    Just msg ->
+      case m.focused of
+        Nothing ->
+          {m | msgs = msg :: m.msgs }
+        Just i ->
+          {m | msgs = (List.take i m.msgs) ++ msg :: (List.drop i m.msgs) }
 
 popUndoStack : Model -> Model
 popUndoStack m =
