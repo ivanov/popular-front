@@ -37,6 +37,11 @@ type RawOrRendered
     = Raw
     | Rendered
 
+type UndoAction
+  = Deleted (Int, (String, Jmsg))
+  | Inserted Int
+  | Cleared (List (String, Jmsg))
+
 
 
 -- MODEL
@@ -50,7 +55,7 @@ type alias Model =
     , raw : RawOrRendered
     , focused : Maybe Int
     , bufferedMsg : Maybe (String, Jmsg)
-    , undo : List (Int, (String, Jmsg))
+    , undo : List UndoAction
     , server : String
     , sessions : RemoteData Http.Error (List Session)
     , activeSession : Maybe Session
@@ -338,7 +343,11 @@ update msg model =
             { model | status = "Interrupted" } ! [ Cmd.none ]
 
         ClearAllMessages ->
-            { model | msgs = [], focused = Nothing } ! [ Cmd.none ]
+            { model
+                | msgs = []
+                , focused = Nothing
+                , undo = Cleared model.msgs :: model.undo
+            } ! [ Cmd.none ]
 
         DeleteFocusedMessage ->
             dropFocused model ! [ Cmd.none ]
@@ -789,7 +798,7 @@ dropFocused m  =
         in
           case focusedMsg of
             Nothing -> m.undo
-            Just msg -> (i, msg) :: m.undo
+            Just msg -> Deleted (i, msg) :: m.undo
   in
     {m | msgs = msgs
        , focused = inRange (List.length msgs) m.focused
@@ -827,9 +836,15 @@ popUndoStack : Model -> Model
 popUndoStack m =
   let (msgs, undo) =
     case m.undo of
-      (i, msg) :: xs ->
-        if i == 0 then (msg :: m.msgs, xs)
-        else ((List.take i m.msgs) ++ msg :: List.drop i m.msgs, xs)
+      x :: xs -> case x of
+        Deleted (i, msg) ->
+          if i == 0 then (msg :: m.msgs, xs)
+          else ((List.take i m.msgs) ++ msg :: List.drop i m.msgs, xs)
+        Inserted i ->
+          (List.take i m.msgs ++ List.drop (i+1) m.msgs, xs)
+        Cleared msgs ->
+          (msgs, xs)
+
       _ -> (m.msgs, m.undo)
   in
   { m | undo = undo, msgs = msgs }
