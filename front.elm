@@ -104,6 +104,7 @@ type Msg
     | RestartActiveSessionResult (Result Http.Error ())
     | InterruptActiveSession
     | InterruptActiveSessionResult (Result Http.Error ())
+    | DeleteFocusedMessage
     | ClearAllMessages
     | KeyMsgDown Keyboard.KeyCode
     | Status String
@@ -332,6 +333,9 @@ update msg model =
         ClearAllMessages ->
             { model | msgs = [], focused = Nothing } ! [ Cmd.none ]
 
+        DeleteFocusedMessage ->
+            dropFocused model ! [ Cmd.none ]
+
         KeyMsgDown code ->
             let
                 focused =
@@ -364,7 +368,7 @@ update msg model =
 
                         'R' ->
                             update (Ping resource_info_request_msg) model
-                        
+
                         'T' ->
                             update ToggleRendered model
 
@@ -377,6 +381,10 @@ update msg model =
                         -- ¾ is .
                         'I' ->
                             update InterruptActiveSession model
+
+                        'D' ->
+                            update DeleteFocusedMessage model
+
 
                         _ ->
                             model ! []
@@ -735,6 +743,29 @@ viewValidMessages model =
                             List.take i model.msgs
             in
             List.indexedMap (\index ( string, message ) -> viewMessage model index message) msgs
+
+dropFocused : Model -> Model
+dropFocused m  =
+  let
+    msgs = case m.focused of
+      Nothing -> m.msgs
+      Just i ->
+        if i == 0 then
+          List.drop 1 m.msgs
+        else
+          List.take i m.msgs ++ List.drop (i+1) m.msgs
+  in
+    {m | msgs = msgs, focused = inRange (List.length msgs) m.focused}
+
+inRange : Int -> Maybe Int -> Maybe Int
+inRange max cur = if max == 0 then Nothing
+  else case cur of
+    Nothing -> Nothing
+    Just i ->
+      if i < max then
+        Just i
+      else
+        Just (max-1)
 
 
 viewTimeSlider : Model -> Html Msg

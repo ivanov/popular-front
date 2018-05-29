@@ -24,6 +24,8 @@ npm install -g elm
 (Alternatively, you can [get a binary installer for Mac and
 Windows](https://guide.elm-lang.org/install.html)).
 
+Then, so long as the location where elm was installed is in your path, you can proceed. 
+
 Install the elm package dependencies.
 ```
 elm-package install
@@ -151,7 +153,7 @@ popular front is being served from).
 - [ ] and when the token is wrong (403)
 - [ ] support comm messages
 - [ ] message order editor (vi keys)
-      - delete with 'd' or 'x'
+      x delete with 'd' or 'x'
       - paste with 'p'
       - copy with 'y'
       - undo with 'u' (ideally would be multi-level)
@@ -167,7 +169,8 @@ popular front is being served from).
 - [ ] set up a "focused" slider for changing focus of current message
 - [ ] export messages to json
 - [ ] import json message streams (for replay)
-
+- [ ] start a new session from PF UI
+- [ ] serve popular front as a jupyter serverextension
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...
