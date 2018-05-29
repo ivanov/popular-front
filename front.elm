@@ -780,6 +780,7 @@ viewValidMessages model =
 dropFocused : Model -> Model
 dropFocused m  =
   let
+    mNext = yankFocused m
     msgs = case m.focused of
       Nothing -> m.msgs
       Just i ->
@@ -800,9 +801,10 @@ dropFocused m  =
             Nothing -> m.undo
             Just msg -> Deleted (i, msg) :: m.undo
   in
-    {m | msgs = msgs
-       , focused = inRange (List.length msgs) m.focused
-       , undo = undo
+    { mNext
+        | msgs = msgs
+        , focused = inRange (List.length msgs) m.focused
+        , undo = undo
      }
 
 inRange : Int -> Maybe Int -> Maybe Int
@@ -830,7 +832,7 @@ pasteBuffered m =
         Nothing ->
           {m | msgs = msg :: m.msgs }
         Just i ->
-          {m | msgs = (List.take i m.msgs) ++ msg :: (List.drop i m.msgs) }
+          {m | msgs = (List.take (i+1) m.msgs) ++ msg :: (List.drop (i+1) m.msgs) }
 
 popUndoStack : Model -> Model
 popUndoStack m =
@@ -949,7 +951,7 @@ getSubject : Jmsg_ -> String
 getSubject msg =
     let
         state =
-            ": " ++ Maybe.withDefault "" msg.content.execution_state
+            ": " ++ Maybe.withDefault " (no exec state) " msg.content.execution_state
     in
     "(" ++ msg.channel ++ ") " ++ msg.header.msg_type ++ state
 
@@ -999,7 +1001,7 @@ renderMsg_ model msg raw =
     , renderMimeBundles msg
     , text raw
 
-    -- , text <| "***" ++  msg.header.msg_type ++ ": " ++ (Maybe.withDefault "" msg.content.execution_state) , text <| toString msg
+    -- , text <| "***" ++  msg.header.msg_type ++ ": " ++ (Maybe.withDefault " (1 no exec state)" msg.content.execution_state) , text <| toString msg
     ]
 
 -- renderMimeBundles : Jmsg_ -> Html Msg
@@ -1008,7 +1010,7 @@ renderMimeBundles : Jmsg_ -> Html Msg
 renderMimeBundles msg =
     case msg.content.data of
         Nothing ->
-            div [ innerHtml "No <b> content</b> :\\" ] []
+            div [ innerHtml "No <b> content data</b> :\\" ] []
 
         Just data ->
             div []
