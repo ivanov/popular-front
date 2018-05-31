@@ -50,6 +50,10 @@ parameter which specifies the URL the elm-reactor is serving to, like so:
 jupyter notebook --NotebookApp.allow_origin="http://localhost:8000" --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.disable_check_xsrf=True
 ```
 
+As of May 2018, there is no way to start a new kernel / session from the Popular
+Front User Interface, so go ahead and start one (or several) in the Jupyter
+interface, and they will be available in the dropdown  at the top of Popular
+Front.
 
 ## Common Failure modes
 Message in browser javascript console when we can't connect:
@@ -178,6 +182,12 @@ popular front is being served from).
 - [ ] compose an outgoing queue of messages (order, timing optionally specified)
 - [ ] in-reply-to message highlighting / threading
 - [ ] up and down should only go through visible messages
+- [ ] v for visual mode to multi-select messages
+- [ ] click should not deselect by itself
+- [ ] make sequence diagram with each actor being one of the channels
+- [ ] bookend messages
+- [ ] unread message indicator
+
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...
