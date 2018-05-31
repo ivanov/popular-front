@@ -693,13 +693,28 @@ viewMessage_ model i msg =
                  [ em []
                      [ --text <| "10:50" -- ++ (toString <| Date.fromString msg.header.date)
                        --text <| toString i --"10:50" -- ++ (toString <| Date.fromString msg.header.date)
-                       ii --"10:50" -- ++ (toString <| Date.fromString msg.header.date)
+                       -- ii --"10:50" -- ++ (toStringHMS <| Date.fromString msg.header.date)
+                       ii
                      ]
                  ]
             , td [] content
+            , (toHMS <| Date.fromString msg.header.date)
             ]
     in
     tr [ style <| s ++ [ "cursor" => "pointer"], onClick (Focus i) ] with_date
+
+toHMS : Result String Date.Date -> Html Msg
+toHMS d =
+  let (s, hover) =
+    case d of
+      Ok d ->
+        (List.map toString [Date.hour d, Date.minute d, Date.second d,
+        Date.millisecond d]  |>
+        String.join ":", "")
+      Err e ->
+        ("???", e)
+  in
+    span [title hover] [text s]
 
 
 {- This is kind of fugly, but works -}
