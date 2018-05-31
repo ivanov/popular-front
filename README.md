@@ -183,7 +183,7 @@ popular front is being served from).
 - [ ] in-reply-to message highlighting / threading
 - [ ] up and down should only go through visible messages
 - [ ] v for visual mode to multi-select messages
-- [ ] click should not deselect by itself
+- [x] click should not deselect by itself
 - [ ] make sequence diagram with each actor being one of the channels
 - [ ] bookend messages
 - [ ] unread message indicator

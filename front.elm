@@ -106,6 +106,7 @@ type Msg
     | GetTimeAndThen (Time -> Msg)
     | ToggleRendered
     | Focus Int
+    | NoFocus
     | ChangeServer String
     | NewSessions (Result Http.Error (List Session))
     | SetActiveSession Session
@@ -267,16 +268,10 @@ update msg model =
                 ! [ Cmd.none ]
 
         Focus i ->
-            { model
-                | focused =
-                    case Just i == model.focused of
-                        True ->
-                            Nothing
+            { model | focused = Just i } ! [ Cmd.none ]
 
-                        False ->
-                            Just i
-            }
-                ! [ Cmd.none ]
+        NoFocus ->
+            { model | focused = Nothing } ! [ Cmd.none ]
 
         ChangeServer s ->
             let
@@ -585,6 +580,7 @@ view model =
         [ viewStatus model
         , div []
             [ toggleRenderedStatus model
+            , clearSelectionButton
             , kernelInfoButton
             , quickHTMLButton4
             , quickHTMLButton
@@ -869,6 +865,8 @@ toggleRenderedStatus model =
     in
     button [ onClick ToggleRendered ] [ text nextToggleValue ]
 
+clearSelectionButton : Html Msg
+clearSelectionButton = button [ onClick NoFocus ]  [ text "Clear Selection" ]
 
 kernelInfoButton : Html Msg
 kernelInfoButton =
