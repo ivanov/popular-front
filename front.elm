@@ -590,7 +590,8 @@ view model =
             , quickHTMLButton5
             ]
         , div [ style [ "display" => "flex", "flex-direction" => "row", "max-height" => "87vh"] ]
-            [  div [style ["overflow" => "auto"]] [table [ style [] ] (viewValidMessages model)]
+            [  div [style ["overflow" => "auto"]] [table [ style ["min-width" =>
+            "200px"] ] (viewValidMessages model)]
             , viewFocused model
             ]
         -- , input [ onInput Input ] []
@@ -698,7 +699,7 @@ viewMessage_ model i msg =
             , td [] content
             ]
     in
-    tr [ style s, onClick (Focus i) ] with_date
+    tr [ style <| s ++ [ "cursor" => "pointer"], onClick (Focus i) ] with_date
 
 
 {- This is kind of fugly, but works -}
@@ -935,7 +936,7 @@ getSubject : Jmsg_ -> String
 getSubject msg =
     let
         state =
-            ": " ++ Maybe.withDefault " (no exec state) " msg.content.execution_state
+            ": " ++ Maybe.withDefault "" msg.content.execution_state
     in
     "(" ++ msg.channel ++ ") " ++ msg.header.msg_type ++ state
 
