@@ -1006,20 +1006,22 @@ renderMimeBundles msg =
 
         Just data ->
             div []
-                [ div [ asHtml data.text_html ] [ text "text/html" ]
-                , div [ asHtml data.text_plain ] [ text "plain" ]
-                , div [ asHtml data.code ] [ text "code" ]
+                [  asHtml data.text_html  "text/html"
+                ,  asHtml data.text_plain  "plain"
+                ,  asHtml data.code  "code"
                 ]
 
-
-asHtml : Maybe String -> Attribute Msg
-asHtml c =
+asHtml : Maybe String -> String -> Html Msg
+asHtml c name  =
     case c of
         Nothing ->
-            innerHtml ""
+            div [] []
 
         Just s ->
-            innerHtml s
+          if name=="text/html" then
+            div [innerHtml (name ++ ": " ++ s)] []
+          else
+            div [] [text name, text ": ",  text s]
 
 
 innerHtml : String -> Html.Attribute Msg
