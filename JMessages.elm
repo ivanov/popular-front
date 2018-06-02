@@ -56,6 +56,7 @@ type alias JmsgParent_header =
 type alias JmsgContent =
     { execution_state : Maybe String
     , data : Maybe JmsgContentData
+    , traceback : Maybe (List String)
     }
 
 
@@ -67,9 +68,12 @@ type alias JmsgContent =
 type alias JmsgContentData =
     { text_html : Maybe String
     , text_plain : Maybe String
+    , image_png : Maybe String
     , code : Maybe String
     , execution_count : Maybe Int
     }
+
+type JmsgContentTraceback = List String
 
 
 type alias JmsgHeader =
@@ -93,7 +97,7 @@ decodeJmsg_ =
         |> required "parent_header" decodeJmsgParent_header
         -- |> required "msg_type" (Json.Decode.string)
         -- |> required "msg_id" (Json.Decode.string)
-        |> optional "content" decodeJmsgContent (JmsgContent Nothing Nothing)
+        |> optional "content" decodeJmsgContent (JmsgContent Nothing Nothing Nothing)
         |> required "header" decodeJmsgHeader
         |> optional "channel" Json.Decode.string "shell"
         -- |> required "buffers" (Json.Decode.list decodeComplexType)
@@ -122,6 +126,7 @@ decodeJmsgContent =
         -- this is far from ideal...
         |> optional "execution_state" (maybe string) Nothing
         |> optional "data" (maybe decodeJmsgContentData) Nothing
+        |> optional "traceback" (maybe decodeJmsgContentTraceback) Nothing
 
 
 decodeJmsgContentData : Json.Decode.Decoder JmsgContentData
@@ -129,9 +134,13 @@ decodeJmsgContentData =
     Json.Decode.Pipeline.decode JmsgContentData
         |> optional "text/html" (maybe string) Nothing
         |> optional "text/plain" (maybe string) Nothing
+        |> optional "image/png" (maybe string) Nothing
         |> optional "code" (maybe string) Nothing
         |> optional "execution_count" (maybe int) Nothing
 
+decodeJmsgContentTraceback : Json.Decode.Decoder (List String)
+decodeJmsgContentTraceback =
+    (list string)
 
 decodeJmsgHeader : Json.Decode.Decoder JmsgHeader
 decodeJmsgHeader =
@@ -213,7 +222,7 @@ brokenJmsg s =
     Jmsg_
         { date = "broken", msg_id = "broken", msg_type = "hi" }
         -- parentHeader
-        { execution_state = Just s, data = Nothing }
+        { execution_state = Just s, data = Nothing, traceback = Nothing }
         { username = "luser", msg_type = "broken", msg_id = "broken", date = "broken", session = "broken" }
         "broken"
         {}

@@ -387,7 +387,8 @@ update msg model =
                             update ClearAllMessages model
 
                         'R' ->
-                            update (Ping resource_info_request_msg) model
+                            --update (Ping resource_info_request_msg) model
+                            update ToggleRendered model
 
                         'T' ->
                             update ToggleRendered model
@@ -575,10 +576,11 @@ view model =
             , "margin" => "0"
             , "flex-direction" => "column"
             , "min-height" => "100vh"
+            , "flex" => "1" 
             ]
         ]
         [ viewStatus model
-        , div []
+        , div [style []]
             [ toggleRenderedStatus model
             , clearSelectionButton
             , kernelInfoButton
@@ -598,10 +600,10 @@ view model =
         -- , button [ onClick Send ] [ text "Send" ]
 
         -- , button [ onClick <| newMessage "--- mark --- " ] [ text "add marker" ]
+        , div [ style [ "flex" => "1" ] ] []
         , button [ onClick ClearAllMessages ] [ text "(C)lear all messages" ]
 
         --<| "--- mark --- " ++ [(toString <| Task.perform <| \a ->  Time.now )] [text "Add Marker"]
-        , div [ style [ "flex" => "1" ] ] []
         -- , viewTimeSlider model
         -- , viewTimeSlider model
         , viewTimeSlider model
@@ -874,10 +876,10 @@ toggleRenderedStatus model =
         nextToggleValue =
             case model.raw of
                 Raw ->
-                    "Rendered"
+                    "(R)endered"
 
                 Rendered ->
-                    "Raw"
+                    "(R)aw"
     in
     button [ onClick ToggleRendered ] [ text nextToggleValue ]
 
@@ -915,7 +917,7 @@ quickHTMLButton5 =
         , onMouseOver <| Status "Requires ivanov's ipykernel branch"
         , onMouseOut <| Status ""
         ]
-        [ text "(r)esource info request" ]
+        [ text "resource info request" ]
 
 
 zip =
@@ -1002,6 +1004,7 @@ renderMsg_ model msg raw =
     --, pre [] [text <| encode 2 (encodeJmsg msg)]
     -- , text <| encode 2 raw
     , renderMimeBundles msg
+    , renderException msg
     , hr [] []
     , case model.raw of
         Raw -> text raw
@@ -1021,8 +1024,9 @@ renderMimeBundles msg =
         Just data ->
             div []
                 [  asHtml data.text_html  "text/html"
+                ,  asHtml data.image_png  "image/png"
                 ,  asHtml data.text_plain  "plain"
-                ,  asHtml data.code  "code"
+                -- ,  asHtml data.code  "code"
                 ]
 
 asHtml : Maybe String -> String -> Html Msg
@@ -1034,14 +1038,29 @@ asHtml c name  =
         Just s ->
           if name=="text/html" then
             div [innerHtml (name ++ ": " ++ s)] []
+          else if name=="image/png" then
+            --div [innerHtml ("<img src=\"data:image/png;base64," ++ s ++ "\">") ] []
+            div [] [text name, text ": ", img [ src ("data:image/png;base64," ++ s)] []]
           else
-            div [] [text name, text ": ",  text s]
+            div [] [text name, text ": ", text s]
 
 
 innerHtml : String -> Html.Attribute Msg
 innerHtml s =
     VirtualDom.property "innerHTML" <| Json.Encode.string s
 
+renderException : Jmsg_ -> Html Msg
+renderException msg =
+  let
+    tb = msg.content.traceback
+  in
+    tbAsHtml tb
+
+tbAsHtml : Maybe (List String) -> Html Msg
+tbAsHtml tb =
+  case tb of
+    Nothing -> div [] []
+    Just strings -> asHtml (Just (String.join "" strings)) "Traceback"
 
 viewServer model =
     span []
