@@ -20,6 +20,7 @@ import Time exposing (Time, now)
 import VirtualDom
 import WebSocket
 import Color exposing (Color, toRgb)
+import Regex exposing (HowMany(..), regex)
 
 import Colorbrewer.Qualitative exposing  (..)
 
@@ -65,6 +66,7 @@ type alias Model =
     -- `seed` is used for msg_id generation of outgoing messages, which need to
     -- be unique per Jupyter protocol specification. It is initialized from a
     -- timestamp via the ConnectAPI message on page load.
+    , token : String
     }
 
 
@@ -85,6 +87,7 @@ init =
       , activeSession = Nothing
       , status = ""
       , seed = Random.initialSeed 0
+      , token = ""
       }
       -- , Cmd.none)
     , Task.perform ConnectAPI now
@@ -126,9 +129,6 @@ type Msg
 newMessage str =
     GetTimeAndThen (\time -> NewTimeMessage time str)
 
-token : String
-token = "038eaee1ae5b0b07d503ec1490f2e01945f686b5c8181557"
-
 --ws_url = "ws://localhost:8888/api/kernels/d341ae22-0258-482b-831a-fa0a0370ffba"
 ws_url : Model -> String
 ws_url model =
@@ -144,18 +144,23 @@ ws_url model =
                 ++ "/api/kernels/"
                 ++ s.kernel.id
                 ++ "/channels"
-                ++ "?token=" ++ token
+                ++ "?token=" ++ model.token
 
 
 restart_session_url : Model -> String
 restart_session_url model =
-    String.join "http:" <| String.split "ws:" <| String.join "/restart?token=" <| String.split "/channels" (ws_url model)
+    String.join "http:" <| String.split "ws:" <| String.join "/restart?token="  [ model.token ]
 
 
 interrupt_session_url : Model -> String
 interrupt_session_url model =
     String.join "http:" <| String.split "ws:" <| String.join "/interrupt" <| String.split "/channels" (ws_url model)
 
+trailingSlash : Regex.Regex
+trailingSlash = regex "/$"
+
+withNothing : Regex.Match -> String
+withNothing m = ""
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -275,9 +280,16 @@ update msg model =
 
         ChangeServer s ->
             let
+                (front, token) = case Regex.split All (regex "[?&]token=") s of
+                      a :: b :: c ->  (Debug.log "front is" a, b)
+                      a :: _ -> (a, "SADDAY_notoken")
+                      [] -> ("", "")
+                server =  Regex.replace All (regex "http://") withNothing front |> Regex.replace All trailingSlash withNothing
+
                 new_model =
                     { model
-                        | server = s
+                        | server = Debug.log "setting server to" server
+                        , token =  Debug.log "setting token  to" token
                         , sessions = Loading
                     }
             in
@@ -469,13 +481,15 @@ formatTime t =
                 , floor (Time.inSeconds t) % 60
                 ]
 
+basic_url : Model -> String
+basic_url model = "http://" ++ model.server ++ "/" ++ "?token=" ++ model.token
 
 api_url : Model -> String
 api_url model =
     -- TODO: this is brittle - we should check if there's already a leading http://
     -- in the url and not add it to the front in that case
     -- TODO: support tokens and password
-    "http://" ++ model.server ++ "/api/sessions" ++ "?token=" ++ token
+    "http://" ++ model.server ++ "/api/sessions" ++ "?token=" ++ model.token
 
 
 getSession : Model -> Cmd Msg
@@ -1064,7 +1078,7 @@ tbAsHtml tb =
 
 viewServer model =
     span []
-        [ input [ onInput ChangeServer, value model.server ] []
+        [ input [ onInput ChangeServer, value (basic_url model.server) ] []
         , select [] <| sessionsToOptions model
         ]
 

@@ -187,7 +187,7 @@ popular front is being served from).
 - [ ] make sequence diagram with each actor being one of the channels
 - [ ] bookend messages
 - [ ] unread message indicator
-
+- [ ] extract token from url and add it to the model
 
 ### upstream cleanup
 - [ ] why do we have the same thing in msg_type in the header and in the raw thing...
