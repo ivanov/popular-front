@@ -635,13 +635,19 @@ viewStatus model =
                 Loading ->
                     ( "yellow", "Loading..." )
 
-                Success _ ->
-                    ( "green", "Connected" )
+                Success s ->
+                  case s of
+                    a::b ->
+                      ( "green", " Active session" )
+                    nil ->
+                      ( "yellow", "This server has no active sessions. " )
 
                 Failure x ->
-                    ( "red", "Failed to connect" )
+                    ( "red", "Failed to connect to Notebook server" )
     in
-    div [ style [ "display" => "flex", "backgroundColor" => color ] ] [ viewServer model, viewActiveSession message, viewStatusText model ]
+    div [ style [ "display" => "flex" , "backgroundColor" => color ]
+        , onClick (ChangeServer model.server)
+        ] [ viewServer model, viewActiveSession message, viewStatusText model ]
 
 
 viewActiveSession : String -> Html Msg
@@ -1076,9 +1082,10 @@ tbAsHtml tb =
     Nothing -> div [] []
     Just strings -> asHtml (Just (String.join "" strings)) "Traceback"
 
+viewServer : Model -> Html Msg
 viewServer model =
     span []
-        [ input [ onInput ChangeServer, value (basic_url model.server) ] []
+        [ input [ onInput ChangeServer, value (basic_url model) ] []
         , select [] <| sessionsToOptions model
         ]
 
@@ -1092,11 +1099,16 @@ sessionsToOptions : Model -> List (Html Msg)
 sessionsToOptions model =
     case model.sessions of
         Success sessions ->
-            List.map sessionToOption sessions
+          case sessions of
+            a::b ->
+              (List.map sessionToOption sessions)
+            nil ->
+               [option [disabled True, selected True] [text "oops"]]
+            --[option [ onClick (ChangeServer model.server) ] [text "fetch sessions"]]
 
         --_ -> [option [disabled True, selected True] [text ""]]
-        _ ->
-            []
+        _ ->[option [disabled True, selected True] [text "damn"]]
+            --[]
 
 
 {-| Generate a random hex character (one of '0'-'9' and 'a'-'f')
