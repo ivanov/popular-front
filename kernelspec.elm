@@ -1,11 +1,12 @@
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, on)
-import Json.Encode exposing (encode)
 import Http
 import Json.Decode exposing (field, int, oneOf, string, dict)
-import Dict exposing (Dict)
+import Json.Encode exposing (encode)
 import Task
+import JSessions exposing (..)
 
 main =
   Html.program
@@ -29,7 +30,7 @@ init = (
   { fullName = Nothing
   , templateType = List.head appTypes
   , apiResponse = Nothing
-  }, send (ChangeType "default"))
+  }, Cmd.batch [send (ChangeType "default"), send (StartNewKernel "default")])
 
 -- from https://medium.com/elm-shorts/how-to-turn-a-msg-into-a-cmd-msg-in-elm-5dd095175d84
 send : Msg -> Cmd Msg
@@ -42,7 +43,8 @@ type Msg
     | ChangeName String
     | ChangeType String
     | FetchKernelSpecAPI (Result Http.Error KernelSpecAPI)
-    --| StartNewKernel (Result Http.Error KernelSpecAPI)
+    | StartNewKernel String
+    | SessionCreated (Result Http.Error Session)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -51,12 +53,22 @@ update msg model =
     ChangeName s -> {model | fullName = Just s} ! [Cmd.none]
     ChangeType s -> {model | templateType = Just s} ! [getNotebook model]
     FetchKernelSpecAPI result ->
-    let
-      notebook = case result of
-        Ok nb -> Just nb
-        Err x -> Debug.log ("couldn't load nb" ++ toString x) Nothing
-    in
-      {model | apiResponse = notebook } ! [Cmd.none]
+      let
+        notebook = case result of
+          Ok nb -> Just nb
+          Err x -> Debug.log ("couldn't load nb" ++ toString x) Nothing
+      in
+        {model | apiResponse = notebook } ! [Cmd.none]
+    StartNewKernel kernel_name ->  --for not, just make the post, and return the result
+       model  ! [postSession model kernel_name]
+    SessionCreated result ->
+      let
+        maybe_res = case result of
+          Ok s -> Debug.log ("Successful session!"++toString s) (Just s)
+          Err x -> Debug.log ("couldn't load nb" ++ toString x) Nothing
+          -- TODO: add a message about this
+      in
+        model ! [Cmd.none]
     None -> (model, Cmd.none)
 
 --onChange = on "change" Json.map
@@ -124,6 +136,22 @@ getNotebook model =
             Http.get (Debug.log "Sessions API url: " "http://localhost:8888/api/kernelspecs") decodeKernelSpecAPI
     in
     Http.send FetchKernelSpecAPI request
+
+session_api_url : String
+session_api_url = "http://localhost:8888/api/sessions"
+
+
+postSession : Model -> String -> Cmd Msg
+postSession model name =
+  Http.post session_api_url (makeSession model name) decodeSession
+    |> Http.send SessionCreated
+
+-- createPostRequest : Model -> String -> Http.Request SessionReq
+makeSession : Model -> String -> Http.Body
+makeSession model name =
+  Http.jsonBody (encodeSessionReq
+    (makeSessionReq "something" name )
+  )
 
 
 type alias KernelSpecAPI =

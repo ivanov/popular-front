@@ -3,6 +3,8 @@ module JSessions exposing
   , decodeSession
   , decodeSessions
   , encodeSession
+  , encodeSessionReq
+  , makeSessionReq
   , sampleSessions
   )
 
@@ -22,6 +24,27 @@ type alias SessionKernel =
     { id : String
     , name : String
     }
+
+type alias SessionRequest =
+  { path: String
+  , type_: String
+  , name: String
+  , kernel:
+    { id: Json.Encode.Value
+     , name: String
+    }
+  }
+
+makeSessionReq : String -> String -> SessionRequest
+makeSessionReq path name =
+  { path=path
+  , type_= "notebook"
+  , name= ""
+  , kernel=
+    { id= Json.Encode.null
+    , name= name
+    }
+  }
 
 type alias SessionNotebook =
     { path : String
@@ -64,6 +87,19 @@ encodeSessionNotebook : SessionNotebook -> Json.Encode.Value
 encodeSessionNotebook record =
     Json.Encode.object
         [ ("path",  Json.Encode.string <| record.path)
+        ]
+
+encodeSessionReq : SessionRequest -> Json.Encode.Value
+encodeSessionReq record =
+    Json.Encode.object
+        [ ( "path",  Json.Encode.string record.path)
+        , ( "type",  Json.Encode.string record.type_)
+        , ( "name",  Json.Encode.string record.name)
+        , ( "kernel",  (Json.Encode.object
+            [ ("id", record.kernel.id)
+            , ("name", Json.Encode.string record.kernel.name)
+            ])
+          )
         ]
 
 
