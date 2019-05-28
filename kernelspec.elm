@@ -69,6 +69,9 @@ view model = div []
   [ viewName model
   , br [] []
   , viewKernelSpecList model
+  , viewActiveKernelSpec model
+  , br [] []
+  , viewDefault model
   , div [] [text <| toString model]]
 
 viewName : Model -> Html Msg
@@ -86,6 +89,22 @@ viewKernelSpecList model =
     ]
     <| List.map (optFor model) (getKernelSpecNameList model)
 
+viewActiveKernelSpec : Model -> Html Msg
+viewActiveKernelSpec model =
+  div [] [ text
+    <| toString
+    --<| Maybe.withDefault  ""
+    <| Dict.get (Maybe.withDefault "default" model.templateType)
+    <| (case model.apiResponse of
+          Nothing -> Dict.empty
+          Just ks -> ks.kernelSpecs)
+  ]
+
+viewDefault : Model -> Html Msg
+viewDefault model =
+  case model.apiResponse of
+    Nothing -> br [] []
+    Just api -> div [] [ text <| "Default: " ++ api.default ]
 
 getKernelSpecNameList : Model -> List String
 getKernelSpecNameList model =
