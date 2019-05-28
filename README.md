@@ -194,3 +194,6 @@ popular front is being served from).
 - [ ] ANSI escape codes in execute_reply when there are error messages
 
 
+### kernel-spec
+- `jupyter kernelspec install python4 --sys-prefix` to install this kernelspec
+  in a virtualenv

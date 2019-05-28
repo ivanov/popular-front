@@ -31,6 +31,7 @@ init = (
   , apiResponse = Nothing
   }, send (ChangeType "default"))
 
+-- from https://medium.com/elm-shorts/how-to-turn-a-msg-into-a-cmd-msg-in-elm-5dd095175d84
 send : Msg -> Cmd Msg
 send msg = Task.succeed msg
   |> Task.perform identity
@@ -40,7 +41,8 @@ type Msg
     = None
     | ChangeName String
     | ChangeType String
-    | NewKernelSpec (Result Http.Error KernelSpecAPI)
+    | FetchKernelSpecAPI (Result Http.Error KernelSpecAPI)
+    --| StartNewKernel (Result Http.Error KernelSpecAPI)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -48,7 +50,7 @@ update msg model =
   case msg of
     ChangeName s -> {model | fullName = Just s} ! [Cmd.none]
     ChangeType s -> {model | templateType = Just s} ! [getNotebook model]
-    NewKernelSpec result ->
+    FetchKernelSpecAPI result ->
     let
       notebook = case result of
         Ok nb -> Just nb
@@ -121,7 +123,7 @@ getNotebook model =
         request =
             Http.get (Debug.log "Sessions API url: " "http://localhost:8888/api/kernelspecs") decodeKernelSpecAPI
     in
-    Http.send NewKernelSpec request
+    Http.send FetchKernelSpecAPI request
 
 
 type alias KernelSpecAPI =
