@@ -129,12 +129,12 @@ viewActiveKernelSpec model = case model.apiResponse of
     let
       name = Maybe.withDefault api.default model.templateType
       ks = Dict.get name api.kernelSpecs
-      argv = case ks of
-        Nothing -> ["unknown"]
-        Just ks -> ks.spec.argv
+      (argv, takesArgs) = case ks of
+        Nothing -> (["unknown"], False)
+        Just ks -> (ks.spec.argv, List.member "{parameters_file}" ks.spec.argv)
     in
       div [] [ text
-        <| "argv: " ++ toString argv
+        <| "argv: " ++ toString argv ++ toString takesArgs
       ]
 
 viewDefault : Model -> Html Msg
