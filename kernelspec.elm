@@ -20,7 +20,7 @@ appTypes = [ "Blank", "Equity Screening", "Fake report", "Chart"]
 
 -- MODEL
 type alias Model =
-  { fullName: Maybe String
+  { serverUrl: String
   , templateType: Maybe String
   , apiResponse: Maybe KernelSpecAPI -- TODO: switch to RemoteData?
   , sessionNumber: Int
@@ -28,11 +28,11 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init = (
-  { fullName = Nothing
+  { serverUrl = "http://localhost:8888"
   , templateType = List.head appTypes
   , apiResponse = Nothing
   , sessionNumber = 0
-  }, Cmd.batch [send (ChangeType "default"), send (StartNewKernel "default")])
+  }, Cmd.batch [send RefetchUrl])
 
 -- from https://medium.com/elm-shorts/how-to-turn-a-msg-into-a-cmd-msg-in-elm-5dd095175d84
 send : Msg -> Cmd Msg
@@ -42,7 +42,8 @@ send msg = Task.succeed msg
 -- UPDATE
 type Msg
     = None
-    | ChangeName String
+    | ChangeUrl String
+    | RefetchUrl
     | ChangeType String
     | FetchKernelSpecAPI (Result Http.Error KernelSpecAPI)
     | StartNewKernel String
@@ -52,10 +53,17 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let x = Debug.log (toString model) "update..." in
   case msg of
-    ChangeName s ->
-      { model | fullName = Just s} ! [Cmd.none]
+    ChangeUrl s ->
+      { model
+        | serverUrl = String.trim s
+      } ! [Cmd.none]
+    RefetchUrl ->
+      { model
+        | apiResponse = Nothing
+        , templateType = Nothing
+      } ! [getNotebook model]
     ChangeType s ->
-      { model | templateType = Just s} ! [getNotebook model]
+      { model | templateType = Just s} ! [Cmd.none]
     FetchKernelSpecAPI result ->
       let
         notebook = case result of
@@ -85,6 +93,7 @@ update msg model =
 view : Model -> Html Msg
 view model = div []
   [ viewName model
+  , viewRecconectButton model
   , br [] []
   , viewKernelSpecList model
   , viewActiveKernelSpec model
@@ -95,11 +104,15 @@ view model = div []
   , div [] [text <| toString model]]
 
 viewName : Model -> Html Msg
-viewName model = let n = Maybe.withDefault "Your name" model.fullName in
+viewName model =
   input [ style [("background-color" => "red")]
-        , name "fullName"
-        , value n
-        , onInput ChangeName ] []
+        , name "url"
+        , value model.serverUrl
+        , onInput ChangeUrl ] []
+
+viewRecconectButton : Model -> Html Msg
+viewRecconectButton model =
+  button [onClick RefetchUrl] [text "refetch"]
 
 viewKernelSpecList : Model -> Html Msg
 viewKernelSpecList model =
@@ -143,21 +156,25 @@ getKernelSpecNameList model =
 optFor : Model -> String -> Html Msg
 optFor model s = option [ value s, selected (Just s == model.templateType) ] [text s]
 
+
+api_kernelspec : Model -> String
+api_kernelspec model = model.serverUrl ++ "/api/kernelspecs"
+
 getNotebook : Model -> Cmd Msg
 getNotebook model =
     let
         request =
-            Http.get (Debug.log "Sessions API url: " "http://localhost:8888/api/kernelspecs") decodeKernelSpecAPI
+            Http.get (Debug.log "Sessions API url: " api_kernelspec model)  decodeKernelSpecAPI
     in
     Http.send FetchKernelSpecAPI request
 
 session_api_url : String
-session_api_url = "http://localhost:8888/api/sessions"
+session_api_url = "/api/sessions"
 
 
 postSession : Model -> String -> Cmd Msg
 postSession model name =
-  Http.post session_api_url (makeSession model name) decodeSession
+  Http.post (model.serverUrl ++ session_api_url) (makeSession model name) decodeSession
     |> Http.send SessionCreated
 
 -- createPostRequest : Model -> String -> Http.Request SessionReq
