@@ -123,15 +123,19 @@ viewKernelSpecList model =
     <| List.map (optFor model) (getKernelSpecNameList model)
 
 viewActiveKernelSpec : Model -> Html Msg
-viewActiveKernelSpec model =
-  div [] [ text
-    <| toString
-    --<| Maybe.withDefault  ""
-    <| Dict.get (Maybe.withDefault "default" model.templateType)
-    <| (case model.apiResponse of
-          Nothing -> Dict.empty
-          Just ks -> ks.kernelSpecs)
-  ]
+viewActiveKernelSpec model = case model.apiResponse of
+  Nothing -> div [] []
+  Just api ->
+    let
+      name = Maybe.withDefault api.default model.templateType
+      ks = Dict.get name api.kernelSpecs
+      argv = case ks of
+        Nothing -> ["unknown"]
+        Just ks -> ks.spec.argv
+    in
+      div [] [ text
+        <| "argv: " ++ toString argv
+      ]
 
 viewDefault : Model -> Html Msg
 viewDefault model =
@@ -154,7 +158,12 @@ getKernelSpecNameList model =
     Just ks -> Dict.keys ks.kernelSpecs
 
 optFor : Model -> String -> Html Msg
-optFor model s = option [ value s, selected (Just s == model.templateType) ] [text s]
+optFor model s = let
+    default = case model.apiResponse of
+      Nothing -> "Defaut"
+      Just api -> api.default
+  in
+    option [ value s, selected (Just s == model.templateType || s == default) ] [text s]
 
 
 api_kernelspec : Model -> String
