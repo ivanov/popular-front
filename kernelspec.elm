@@ -3,8 +3,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, on)
 import Http
-import Json.Decode exposing (field, int, oneOf, string, dict)
-import Json.Encode exposing (encode)
+import Json.Decode as D exposing (field, int, oneOf, string, dict)
+import Json.Encode as E exposing (encode)
 import Task
 import JSessions exposing (..)
 
@@ -24,6 +24,8 @@ type alias Model =
   , templateType: Maybe String
   , apiResponse: Maybe KernelSpecAPI -- TODO: switch to RemoteData?
   , sessionNumber: Int
+  , params: Dict String String
+  , msg: Maybe String
   }
 
 init : ( Model, Cmd Msg )
@@ -32,6 +34,8 @@ init = (
   , templateType = List.head appTypes
   , apiResponse = Nothing
   , sessionNumber = 0
+  , params = Dict.empty
+  , msg = Nothing
   }, Cmd.batch [send RefetchUrl])
 
 -- from https://medium.com/elm-shorts/how-to-turn-a-msg-into-a-cmd-msg-in-elm-5dd095175d84
@@ -48,6 +52,7 @@ type Msg
     | FetchKernelSpecAPI (Result Http.Error KernelSpecAPI)
     | StartNewKernel String
     | SessionCreated (Result Http.Error Session)
+    | ChangeParam String String
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -66,11 +71,12 @@ update msg model =
       { model | templateType = Just s} ! [Cmd.none]
     FetchKernelSpecAPI result ->
       let
-        notebook = case result of
-          Ok nb -> Just nb
-          Err x -> Debug.log ("couldn't load nb" ++ toString x) Nothing
+        err_msg = "Couldn't fetch kernelspecs: "
+        (api, msg) = case result of
+          Ok api -> (Just api, Nothing)
+          Err x -> (Debug.log (err_msg ++ toString x) Nothing, Just (err_msg ++ toString x))
       in
-        { model | apiResponse = notebook } ! [Cmd.none]
+        { model | apiResponse = api, msg = msg } ! [Cmd.none]
     StartNewKernel kernel_name ->
       { model | sessionNumber = model.sessionNumber + 1 } ! [postSession model kernel_name]
     SessionCreated result ->
@@ -81,6 +87,8 @@ update msg model =
           -- TODO: add a message about this
       in
         model ! [Cmd.none]
+    ChangeParam key value ->
+      { model | params = Dict.insert key value model.params } ! [Cmd.none]
     None -> (model, Cmd.none)
 
 --onChange = on "change" Json.map
@@ -94,6 +102,7 @@ view : Model -> Html Msg
 view model = div []
   [ viewName model
   , viewRecconectButton model
+  , viewMsg model
   , br [] []
   , viewKernelSpecList model
   , viewActiveKernelSpec model
@@ -114,6 +123,8 @@ viewRecconectButton : Model -> Html Msg
 viewRecconectButton model =
   button [onClick RefetchUrl] [text "refetch"]
 
+viewMsg : Model -> Html Msg
+viewMsg model = span [] [text <| Maybe.withDefault "" model.msg]
 viewKernelSpecList : Model -> Html Msg
 viewKernelSpecList model =
   select
@@ -129,13 +140,20 @@ viewActiveKernelSpec model = case model.apiResponse of
     let
       name = Maybe.withDefault api.default model.templateType
       ks = Dict.get name api.kernelSpecs
-      (argv, takesArgs) = case ks of
-        Nothing -> (["unknown"], False)
-        Just ks -> (ks.spec.argv, List.member "{parameters_file}" ks.spec.argv)
+      (argv, ksDiv) = case ks of
+        Nothing -> (["unknown"], div [] [])
+        Just ks -> (ks.spec.argv, viewKS ks.spec)
     in
-      div [] [ text
-        <| "argv: " ++ toString argv ++ toString takesArgs
-      ]
+      div []
+        [ text <| "argv: " ++ toString argv
+        , ksDiv
+        ]
+
+viewKS : KernelSpecSpec -> Html Msg
+viewKS k =
+  case List.member "{parameters_file}" k.argv of
+    True -> div [] [text "parameter1: ", input [onInput (ChangeParam "parameter1")] [] ]
+    False -> div [] []
 
 viewDefault : Model -> Html Msg
 viewDefault model =
@@ -187,11 +205,22 @@ postSession model name =
     |> Http.send SessionCreated
 
 -- createPostRequest : Model -> String -> Http.Request SessionReq
+
+-- Initially, let's just merge the Json Bodies of a sessionrequst and additional params
 makeSession : Model -> String -> Http.Body
 makeSession model name =
   Http.jsonBody (encodeSessionReq
     (makeSessionReq ("something" ++ (toString model.sessionNumber)) name)
   )
+
+-- modified from Dogbert's answer at https://stackoverflow.com/questions/50990839/how-to-manipulate-json-encode-value-in-elm#50991106
+addKeyValues : List (String, E.Value) -> E.Value -> E.Value
+addKeyValues new value =
+  case D.decodeValue (D.keyValuePairs D.value) value of
+    Ok original ->
+      E.object <| List.append new original
+    Err _ ->
+      value
 
 
 type alias KernelSpecAPI =
@@ -214,25 +243,25 @@ type alias KernelSpecSpec =
   --, metadata: Dict J
   }
 
-decodeKernelSpecAPI : Json.Decode.Decoder KernelSpecAPI
+decodeKernelSpecAPI : D.Decoder KernelSpecAPI
 decodeKernelSpecAPI =
-  Json.Decode.map2 KernelSpecAPI
+  D.map2 KernelSpecAPI
     (field "default" string)
     (field "kernelspecs" (dict decodeKernelSpec))
 
-decodeKernelSpec : Json.Decode.Decoder KernelSpec
+decodeKernelSpec : D.Decoder KernelSpec
 decodeKernelSpec =
-  Json.Decode.map3 KernelSpec
+  D.map3 KernelSpec
     (field "name" string)
     (field "spec" decodeKernelSpecSpec)
     (field "resources" (dict string))
 
 
 
-decodeKernelSpecSpec : Json.Decode.Decoder KernelSpecSpec
+decodeKernelSpecSpec : D.Decoder KernelSpecSpec
 decodeKernelSpecSpec =
-  Json.Decode.map4 KernelSpecSpec
-    (field "argv" (Json.Decode.list string))
+  D.map4 KernelSpecSpec
+    (field "argv" (D.list string))
     (field "display_name" string)
     (field "language" string)
     (field "interrupt_mode" string)
