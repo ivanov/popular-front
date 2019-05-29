@@ -590,7 +590,7 @@ view model =
             , "margin" => "0"
             , "flex-direction" => "column"
             , "min-height" => "100vh"
-            , "flex" => "1" 
+            , "flex" => "1"
             ]
         ]
         [ viewStatus model

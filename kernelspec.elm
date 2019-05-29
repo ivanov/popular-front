@@ -23,6 +23,7 @@ type alias Model =
   { fullName: Maybe String
   , templateType: Maybe String
   , apiResponse: Maybe KernelSpecAPI -- TODO: switch to RemoteData?
+  , sessionNumber: Int
   }
 
 init : ( Model, Cmd Msg )
@@ -30,6 +31,7 @@ init = (
   { fullName = Nothing
   , templateType = List.head appTypes
   , apiResponse = Nothing
+  , sessionNumber = 0
   }, Cmd.batch [send (ChangeType "default"), send (StartNewKernel "default")])
 
 -- from https://medium.com/elm-shorts/how-to-turn-a-msg-into-a-cmd-msg-in-elm-5dd095175d84
@@ -50,17 +52,19 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let x = Debug.log (toString model) "update..." in
   case msg of
-    ChangeName s -> {model | fullName = Just s} ! [Cmd.none]
-    ChangeType s -> {model | templateType = Just s} ! [getNotebook model]
+    ChangeName s ->
+      { model | fullName = Just s} ! [Cmd.none]
+    ChangeType s ->
+      { model | templateType = Just s} ! [getNotebook model]
     FetchKernelSpecAPI result ->
       let
         notebook = case result of
           Ok nb -> Just nb
           Err x -> Debug.log ("couldn't load nb" ++ toString x) Nothing
       in
-        {model | apiResponse = notebook } ! [Cmd.none]
-    StartNewKernel kernel_name ->  --for not, just make the post, and return the result
-       model  ! [postSession model kernel_name]
+        { model | apiResponse = notebook } ! [Cmd.none]
+    StartNewKernel kernel_name ->
+      { model | sessionNumber = model.sessionNumber + 1 } ! [postSession model kernel_name]
     SessionCreated result ->
       let
         maybe_res = case result of
@@ -84,6 +88,8 @@ view model = div []
   , br [] []
   , viewKernelSpecList model
   , viewActiveKernelSpec model
+  , br [] []
+  , viewLaunchKernelButton model
   , br [] []
   , viewDefault model
   , div [] [text <| toString model]]
@@ -120,6 +126,14 @@ viewDefault model =
     Nothing -> br [] []
     Just api -> div [] [ text <| "Default: " ++ api.default ]
 
+viewLaunchKernelButton model =
+  let name = Maybe.withDefault "default" model.templateType
+  in
+  button [onClick (StartNewKernel name)] [ text
+    <| "Launch " ++ toString name
+  ]
+
+
 getKernelSpecNameList : Model -> List String
 getKernelSpecNameList model =
   case model.apiResponse of
@@ -150,7 +164,7 @@ postSession model name =
 makeSession : Model -> String -> Http.Body
 makeSession model name =
   Http.jsonBody (encodeSessionReq
-    (makeSessionReq "something" name )
+    (makeSessionReq ("something" ++ (toString model.sessionNumber)) name)
   )
 
 
