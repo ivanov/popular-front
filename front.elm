@@ -162,6 +162,17 @@ trailingSlash = regex "/$"
 withNothing : Regex.Match -> String
 withNothing m = ""
 
+urlTokenSplit : String -> (String, String)
+urlTokenSplit s = let
+    (front, token) = case Regex.split All (regex "[?&]token=") s of
+          a :: b :: c ->  (Debug.log "front is" a, b)
+          a :: _ -> (a, "SADDAY_notoken")
+          [] -> ("", "")
+    server =  Regex.replace All (regex "http://") withNothing front |> Regex.replace All trailingSlash withNothing
+  in
+   (server, token)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -280,20 +291,17 @@ update msg model =
 
         ChangeServer s ->
             let
-                (front, token) = case Regex.split All (regex "[?&]token=") s of
-                      a :: b :: c ->  (Debug.log "front is" a, b)
-                      a :: _ -> (a, "SADDAY_notoken")
-                      [] -> ("", "")
-                server =  Regex.replace All (regex "http://") withNothing front |> Regex.replace All trailingSlash withNothing
+                s_ = Debug.log "s was " s
+                (server, token) = urlTokenSplit s
 
                 new_model =
                     { model
                         | server = Debug.log "setting server to" server
-                        , token =  Debug.log "setting token  to" token
+                        , token =  Debug.log "setting t0k3n  to" token
                         , sessions = Loading
                     }
             in
-            new_model ! [ getSession new_model ]
+              new_model ! [ getSession new_model ]
 
         ConnectAPI x ->
             let
@@ -314,7 +322,7 @@ update msg model =
                             Success (Debug.log "New sessions result: " sessions)
 
                         Err x ->
-                            Debug.log "failure" Failure x
+                            Failure (Debug.log "failure" x)
                             -- send message - could not connect to the session msg - perhaps CORS not set up, or the token is missing
             in
             { model
@@ -646,7 +654,7 @@ viewStatus model =
                     ( "red", "Failed to connect to Notebook server" )
     in
     div [ style [ "display" => "flex" , "backgroundColor" => color ]
-        , onClick (ChangeServer model.server)
+        , onClick (ChangeServer (basic_url model))
         ] [ viewServer model, viewActiveSession message, viewStatusText model ]
 
 
