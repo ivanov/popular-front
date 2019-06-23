@@ -12,12 +12,13 @@ module JSessions exposing
 -- /api/sessions endpoint
 
 import Json.Encode
-import Json.Decode exposing (field, list, decodeString)
+import Json.Decode exposing (field, list, decodeString, maybe, oneOf)
 
 type alias Session =
     { kernel : SessionKernel
-    , notebook : SessionNotebook
+    , notebook : Maybe SessionNotebook
     , id : String
+    , path : String
     }
 
 type alias SessionKernel =
@@ -52,10 +53,11 @@ type alias SessionNotebook =
 
 decodeSession : Json.Decode.Decoder Session
 decodeSession =
-    Json.Decode.map3 Session
+    Json.Decode.map4 Session
         (field "kernel" decodeSessionKernel)
-        (field "notebook" decodeSessionNotebook)
+        (maybe (field "notebook"decodeSessionNotebook))
         (field "id" Json.Decode.string)
+        (field "path" Json.Decode.string)
 
 decodeSessionKernel : Json.Decode.Decoder SessionKernel
 decodeSessionKernel =
@@ -70,11 +72,20 @@ decodeSessionNotebook =
 
 encodeSession : Session -> Json.Encode.Value
 encodeSession record =
-    Json.Encode.object
-        [ ("kernel",  encodeSessionKernel <| record.kernel)
-        , ("notebook",  encodeSessionNotebook <| record.notebook)
-        , ("id",  Json.Encode.string <| record.id)
-        ]
+    case record.notebook of
+      Nothing ->
+        Json.Encode.object
+            [ ("kernel",  encodeSessionKernel <| record.kernel)
+            , ("id",  Json.Encode.string <| record.id)
+            , ("path",  Json.Encode.string <| record.path)
+            ]
+      Just notebook ->
+        Json.Encode.object
+            [ ("kernel",  encodeSessionKernel <| record.kernel)
+            , ("notebook",  encodeSessionNotebook <| notebook)
+            , ("id",  Json.Encode.string <| record.id)
+            , ("path",  Json.Encode.string <| record.path)
+            ]
 
 encodeSessionKernel : SessionKernel -> Json.Encode.Value
 encodeSessionKernel record =

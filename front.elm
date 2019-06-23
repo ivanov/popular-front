@@ -1094,13 +1094,14 @@ viewServer : Model -> Html Msg
 viewServer model =
     span []
         [ input [ onInput ChangeServer, value (basic_url model) ] []
+        -- -[ input [ value (basic_url model) ] []
         , select [] <| sessionsToOptions model
         ]
 
 
 sessionToOption : Session -> Html Msg
 sessionToOption s =
-    option [ onClick (SetActiveSession s) ] [ text s.notebook.path ]
+    option [ onClick (SetActiveSession s) ] [ text s.path ]
 
 
 sessionsToOptions : Model -> List (Html Msg)
