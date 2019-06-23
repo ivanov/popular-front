@@ -72,20 +72,15 @@ decodeSessionNotebook =
 
 encodeSession : Session -> Json.Encode.Value
 encodeSession record =
-    case record.notebook of
-      Nothing ->
-        Json.Encode.object
-            [ ("kernel",  encodeSessionKernel <| record.kernel)
-            , ("id",  Json.Encode.string <| record.id)
-            , ("path",  Json.Encode.string <| record.path)
-            ]
-      Just notebook ->
-        Json.Encode.object
-            [ ("kernel",  encodeSessionKernel <| record.kernel)
-            , ("notebook",  encodeSessionNotebook <| notebook)
-            , ("id",  Json.Encode.string <| record.id)
-            , ("path",  Json.Encode.string <| record.path)
-            ]
+  let maybe_nb = case record.notebook of
+    Nothing -> Debug.log "Missing nb" []
+    Just notebook -> Debug.log "Have nb" [("notebook",  encodeSessionNotebook <| notebook)]
+  in
+    Json.Encode.object <|
+        [ ("kernel",  encodeSessionKernel <| record.kernel)
+        , ("id",  Json.Encode.string <| record.id)
+        , ("path",  Json.Encode.string <| record.path)
+        ] ++ maybe_nb
 
 encodeSessionKernel : SessionKernel -> Json.Encode.Value
 encodeSessionKernel record =
