@@ -47,7 +47,7 @@ Now start a jupyter notebook server, making sure to pass the `allow_origin`
 parameter which specifies the URL the elm-reactor is serving to, like so:
 
 ```
-jupyter notebook --NotebookApp.allow_origin="http://localhost:8000" --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.disable_check_xsrf=True
+jupyter notebook --NotebookApp.allow_origin="http://localhost:8000"
 ```
 
 As of May 2018, there is no way to start a new kernel / session from the Popular
