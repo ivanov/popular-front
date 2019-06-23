@@ -125,6 +125,7 @@ viewRecconectButton model =
 
 viewMsg : Model -> Html Msg
 viewMsg model = span [] [text <| Maybe.withDefault "" model.msg]
+
 viewKernelSpecList : Model -> Html Msg
 viewKernelSpecList model =
   select
@@ -209,8 +210,10 @@ postSession model name =
 -- Initially, let's just merge the Json Bodies of a sessionrequst and additional params
 makeSession : Model -> String -> Http.Body
 makeSession model name =
-  Http.jsonBody (encodeSessionReq
-    (makeSessionReq ("something" ++ (toString model.sessionNumber)) name)
+  Http.jsonBody
+    -- <| addKeyValues (E.object ("parameters", toJsonList model.params))
+    <| addKeyValues (toJsonList model.params)
+    <| encodeSessionReq (makeSessionReq ("session" ++ (toString model.sessionNumber)) name
   )
 
 -- modified from Dogbert's answer at https://stackoverflow.com/questions/50990839/how-to-manipulate-json-encode-value-in-elm#50991106
@@ -222,6 +225,9 @@ addKeyValues new value =
     Err _ ->
       value
 
+toJsonList : Dict String String -> List (String, E.Value)
+toJsonList d =
+  List.map (\(x,y)->(x, E.string y)) (Dict.toList d)
 
 type alias KernelSpecAPI =
   { default : String
