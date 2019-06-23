@@ -1,15 +1,12 @@
 module Main exposing (..)
 
 
-import BakedMessages exposing (..)
 import Char exposing (fromCode, toCode)
 import Date
 import Html exposing (..)
 import Html.Attributes as Attr exposing (..)
 import Html.Events exposing (..)
 import Http
-import JMessages exposing (..)
-import JSessions exposing (..)
 import Json.Decode exposing (decodeString)
 import Json.Encode exposing (encode)
 import Keyboard
@@ -20,10 +17,13 @@ import Time exposing (Time, now)
 import VirtualDom
 import WebSocket
 import Color exposing (Color, toRgb)
-import Regex exposing (HowMany(..), regex)
 
 import Colorbrewer.Qualitative exposing  (..)
 
+import JMessages exposing (..)
+import JSessions exposing (..)
+import JUtils exposing (..)
+import BakedMessages exposing (..)
 
 main =
     Html.program
@@ -156,23 +156,6 @@ interrupt_session_url : Model -> String
 interrupt_session_url model =
     String.join "http:" <| String.split "ws:" <| String.join "/interrupt" <| String.split "/channels" (ws_url model)
 
-trailingSlash : Regex.Regex
-trailingSlash = regex "/$"
-
-withNothing : Regex.Match -> String
-withNothing m = ""
-
-urlTokenSplit : String -> (String, String)
-urlTokenSplit s = let
-    (front, token) = case Regex.split All (regex "[?&]token=") s of
-          a :: b :: c ->  (Debug.log "front is" a, b)
-          a :: _ -> (a, "SADDAY_notoken")
-          [] -> ("", "")
-    server =  Regex.replace All (regex "http://") withNothing front |> Regex.replace All trailingSlash withNothing
-  in
-   (server, token)
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -297,7 +280,8 @@ update msg model =
                 new_model =
                     { model
                         | server = Debug.log "setting server to" server
-                        , token =  Debug.log "setting t0k3n  to" token
+                        -- don't change the token if one is not in the url given
+                        , token =  Debug.log "setting token  to" Maybe.withDefault model.token token
                         , sessions = Loading
                     }
             in

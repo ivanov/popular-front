@@ -7,6 +7,7 @@ import Json.Decode as D exposing (field, int, oneOf, string, dict)
 import Json.Encode as E exposing (encode)
 import Task
 import JSessions exposing (..)
+import JUtils exposing (..)
 
 main =
   Html.program
@@ -21,6 +22,7 @@ appTypes = [ "Blank", "Equity Screening", "Fake report", "Chart"]
 -- MODEL
 type alias Model =
   { serverUrl: String
+  , token: String
   , templateType: Maybe String
   , apiResponse: Maybe KernelSpecAPI -- TODO: switch to RemoteData?
   , sessionNumber: Int
@@ -31,6 +33,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init = (
   { serverUrl = "http://localhost:8888"
+  , token = ""
   , templateType = List.head appTypes
   , apiResponse = Nothing
   , sessionNumber = 0
@@ -59,8 +62,15 @@ update msg model =
   let x = Debug.log (toString model) "update..." in
   case msg of
     ChangeUrl s ->
+      let
+          s_ = Debug.log "s was " s
+          (server, token) = urlTokenSplit s
+      in
       { model
-        | serverUrl = String.trim s
+        | serverUrl = Debug.log "setting server to" server
+        -- don't change the token if one is not in the url given
+        , token =  Debug.log "setting token  to" (Maybe.withDefault model.token token)
+        , apiResponse = Nothing
       } ! [Cmd.none]
     RefetchUrl ->
       { model
@@ -186,23 +196,23 @@ optFor model s = let
 
 
 api_kernelspec : Model -> String
-api_kernelspec model = model.serverUrl ++ "/api/kernelspecs"
+api_kernelspec model = "http://" ++ model.serverUrl ++ "/api/kernelspecs?token=" ++ model.token
 
 getNotebook : Model -> Cmd Msg
 getNotebook model =
     let
         request =
-            Http.get (Debug.log "Sessions API url: " api_kernelspec model)  decodeKernelSpecAPI
+            Http.get (Debug.log "Sessions API url: " (api_kernelspec model))  decodeKernelSpecAPI
     in
     Http.send FetchKernelSpecAPI request
 
-session_api_url : String
-session_api_url = "/api/sessions"
+session_api_url : Model -> String
+session_api_url model = "http://" ++ model.serverUrl ++ "/api/sessions?token=" ++ model.token
 
 
 postSession : Model -> String -> Cmd Msg
 postSession model name =
-  Http.post (model.serverUrl ++ session_api_url) (makeSession model name) decodeSession
+  Http.post ( session_api_url model) (makeSession model name) decodeSession
     |> Http.send SessionCreated
 
 -- createPostRequest : Model -> String -> Http.Request SessionReq
